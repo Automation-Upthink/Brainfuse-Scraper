@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Monthly Hours Projections</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+<h3>Greetings,</h3>
+
+<p>Below are the total shift durations according to subjects for the next 31 days.</p>
+<table>
+    <thead>
+    <tr>
+        <th>Subject</th>
+        <th>Today's Hours</th>
+        <th>Yesterday's Hours</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="entry : ${subject_hours_combined}" th:if="${entry.key != 'Total'}">
+        <td th:text="${entry.key}">Subject</td>
+        <td th:text="${entry.value.current_hours}">Today's Hours</td>
+        <td th:text="${entry.value.previous_hours}">Yesterday's Hours</td>
+    </tr>
+    <tr th:each="entry : ${subject_hours_combined}" th:if="${entry.key == 'Total'}">
+        <td th:text="${entry.key}">Subject</td>
+        <td th:text="${entry.value.current_hours}">Today's Hours</td>
+        <td th:text="${entry.value.previous_hours}">Yesterday's Hours</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>
