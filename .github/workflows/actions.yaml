@@ -1,12 +1,9 @@
 name: Gradle CI/CD
 
 on:
-  # Trigger on push to main branch and schedule daily at 1:30 AM UTC
   push:
     branches:
       - main
-  schedule:
-    - cron: '30 1 * * *'  # Runs daily at 1:30 AM UTC
 
 jobs:
   build:
@@ -27,6 +24,12 @@ jobs:
 
       - name: Build with Gradle
         run: ./gradlew build --no-daemon
+
+      - name: Create Shadow JAR
+        run: ./gradlew shadowJar --no-daemon
+
+      - name: Run main class
+        run: java -cp build/libs/BF-Schedule-Scraper.jar com.upthink.Bootstrap
 
       - name: Run tests
         run: ./gradlew test --no-daemon
