@@ -214,10 +214,6 @@ public class Bootstrap {
     }
 
 
-
-
-
-
     private void getSpreadsheetService() {
         String credentialFilePath = System.getenv(ENV_GMAIL_CLIENT_SECRET_JSON);
         if (credentialFilePath == null || credentialFilePath.isEmpty()){
