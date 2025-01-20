@@ -10,6 +10,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,84 +33,120 @@ public class CalendarPage extends WebDriverBase{
     private int previousEventId;
     private int accountNotScheduled = 0;
     private static final int RETRY_ATTEMPTS = 3;
+    private String accountName;
 
-    public CalendarPage(WebDriver driver, Calendar today, Calendar endDate) {
+    public CalendarPage(WebDriver driver, Calendar today, Calendar endDate, String accountName) {
         super(driver);
         this.startDate = today.getTime();
         this.endDate = endDate.getTime();
-
+        this.accountName = accountName;
     }
+
+
+    /**
+     * Retry logic for finding an element using a dynamic function.
+     *
+     * @param function    The function to execute for finding the element.
+     * @param parent      The parent element to pass to the function (can be null if not needed).
+     * @param maxRetries  Maximum number of retries.
+     * @param retryDelay  Delay between retries in milliseconds.
+     * @return WebElement if found, null if not found after retries.
+     */
+    private WebElement retryFindElement(Function<WebElement, WebElement> function, WebElement parent, int maxRetries, int retryDelay) {
+        for (int i = 0; i < maxRetries; i++) {
+            try {
+                WebElement element = function.apply(parent);
+                if (element != null) {
+                    return element;
+                }
+            } catch (NoSuchElementException | TimeoutException e) {
+                System.out.println("Attempt " + (i + 1) + " to locate 'tutorsched' failed for account " + accountName);
+                try {
+                    Thread.sleep(retryDelay);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();  // Restore interrupted status
+                }
+            }
+        }
+        return null;  // Return null if not found after retries
+    }
+
 
     /**
      * This method extracts the whole calendar for a particular account
      */
-    public ArrayList<CalendarObject> extractCalendar() {
+    public ArrayList<CalendarObject> extractCalendar() throws ParseException {
         // Wait for the main container to be present
         WebElement mainContainer = waitForPresenceOfElement(By.className("maincontainer"));
         WebElement mainContent = findElement(mainContainer, By.xpath(".//div[contains(@class, 'main-content') and contains(@class, 'column02')]"));
         // Find the main content element
-        mainContent = findElement(mainContent, By.id("tdMainContent"));
+        WebElement tdMainContent = findElement(mainContent, By.id("tdMainContent"));
         // Find the tutoring content element
-        WebElement tutoringContent = mainContent.findElement(By.className("tutorsched"));
-//        System.out.println("Tutoring content found");
+        WebElement tutoringContent = retryFindElement(
+                parent -> waitForPresenceOfChildElement(parent, By.xpath(".//div[contains(@class, 'tutorsched')]"), 30, 100.0),
+                tdMainContent,5, 1000
+        );
+
+        // If tutoring content still not found after retries, handle it (throw an exception or return empty)
+        if (tutoringContent == null) {
+            System.out.println("Account "+ accountName + " has no tutorsched");
+            throw new NoSuchElementException("Could not find the 'tutorsched' element after multiple retries.");
+        }
+
         ArrayList<CalendarObject> events = new ArrayList<>();
-        // Loop until 31 days are processed or we reach the end date
-//        System.out.println(endDate);
-        while (processedDates.size() <= 31 || !processedDates.contains(endDate)) {
+        while (processedDates.size() <= 31 && !processedDates.contains(endDate)) {
             events.addAll(extractSingleCalendarPage(tutoringContent));
             if (!clickNextButton(tutoringContent)) {
                 break;
             }
         }
-//        System.out.println(events);
-//        List<Date> dateList = new ArrayList<>(processedDates);
-//        Collections.sort(dateList);
-//        System.out.println("Processed Dates: " + dateList);
-//        System.out.println("While Loop " + processedDates.size());
         return events;
     }
+
+
+    private void waitForNewPageToLoad(WebElement tutoringContent) {
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        // Wait for any loading progress to disappear (adjust this based on your page's behavior)
+        wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("dlgProgress0")));
+        // Wait for new content to load (use any unique identifier that changes between pages, e.g., a day element)
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.className("fc-day-grid")));  // Adjust the locator if necessary
+    }
+
 
     /**
      * This method extracts one page of the calendar
      * @param tutoringContent
      * @return
      */
-    private ArrayList<CalendarObject> extractSingleCalendarPage(WebElement tutoringContent) {
+    private ArrayList<CalendarObject> extractSingleCalendarPage(WebElement tutoringContent) throws ParseException {
         // Find the calendar element
         WebElement calendarElement = waitForPresenceOfChildElement(tutoringContent, By.id("calendar"));
         String timezone = timezoneSelect(calendarElement);
-//        System.out.println("extract calendar page");
         ArrayList<CalendarObject> array = calendarSchedules(calendarElement, timezone);
-//         System.out.println("Single Calendar Page " + array);
+        System.out.println("Array size" + array.size() + " account " + accountName);
         return array;
     }
 
-    private ArrayList<CalendarObject> calendarSchedules(WebElement calendarElement, String timezone){
+    private ArrayList<CalendarObject> calendarSchedules(WebElement calendarElement, String timezone) throws ParseException {
         ArrayList<CalendarObject> array = new ArrayList<>();
         int maxRetries = 3;
-//        System.out.println("calendar schedules");
 
         boolean elementVisible = false;
         for (int attempt=0; attempt<maxRetries; attempt++) {
             try {
-                waitForVisibilityOfElements(By.className("fc-event-container"), 5, null);
+                waitForVisibilityOfElements(By.className("fc-event-container"), 50, 10.0);
                 elementVisible = true;
                 break;
             } catch (Exception e) {
-                logger.warn("Attempt " + (attempt + 1) + " to locate 'fc-event-container' failed.");
+                System.out.println("Attempt " + (attempt + 1) + " to locate 'fc-event-container' failed. " + accountName);
             }
         }
         if (!elementVisible) {
-            logger.warn("'fc-event-container' not visible after " + maxRetries + " attempts.");
-//            System.out.println("Calendar Schedules - Element not visible, So schedules");
-            // Get a list of all the dates starting from today for 31 days with timezone in the account timezone and timespan = "-"
-            // Generate a list of dates from today for 31 days
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(startDate);
 
             while (calendar.getTime().compareTo(endDate) <= 0 && processedDates.size() <= 31) {
                 Date currentDate = calendar.getTime();
-
                 // Only add the date if it's within the start and end date range and not already processed
                 if (!processedDates.contains(currentDate)) {
                     processedDates.add(currentDate);
@@ -117,7 +154,6 @@ public class CalendarPage extends WebDriverBase{
                     CalendarObject noEventObject = new CalendarObject(currentDate, "-", timezone);
                     array.add(noEventObject);
                 }
-
                 // Move to the next day
                 calendar.add(Calendar.DATE, 1);
             }
@@ -131,13 +167,13 @@ public class CalendarPage extends WebDriverBase{
         return array;
     }
 
-    private ArrayList<CalendarObject> eachWeek(WebElement parentElement, String timezone) {
+    private ArrayList<CalendarObject> eachWeek(WebElement parentElement, String timezone) throws ParseException {
         ArrayList <CalendarObject> array = new ArrayList<>();
         List <WebElement> allWeeks = parentElement.findElements(By.xpath("//div[contains(@class, 'fc-row') and contains(@class, 'fc-week')]"));
         for (WebElement week : allWeeks) {
             if (checkFcTodayClassName(week)) {
-//                WebElement weekBg = week.findElement(By.className("fc-bg"));
-                List<Triple<WebElement, Date, Boolean>> events = checkEventContainer(week);
+                WebElement weekSkeleton = week.findElement(By.className("fc-content-skeleton"));
+                List<Triple<WebElement, Date, Boolean>> events = checkEventContainer(weekSkeleton);
                 ArrayList<CalendarObject> calendarObjects = eachDay(events, timezone);
                 array.addAll(calendarObjects);
             }
@@ -156,20 +192,19 @@ public class CalendarPage extends WebDriverBase{
     }
 
 
-    private List<Triple<WebElement, Date, Boolean>> checkEventContainer(WebElement parentElement) {
+    private List<Triple<WebElement, Date, Boolean>> checkEventContainer(WebElement parentElement) throws ParseException {
         List<Triple<WebElement, Date, Boolean>> eventList = new ArrayList<>();
-
-        WebElement fcSkeleton = parentElement.findElement(By.className("fc-content-skeleton"));
-        WebElement fcBg = parentElement.findElement(By.className("fc-bg"));
-        List<WebElement> elements = fcBg.findElements(By.tagName("td"));
-        WebElement tableElement = fcSkeleton.findElement(By.tagName("table"));
-        WebElement tableBodyElement = tableElement.findElement(By.tagName("tbody"));
-        WebElement tableRow = tableBodyElement.findElement(By.tagName("tr"));
+        WebElement table = parentElement.findElement(By.tagName("table"));
+        WebElement tHead = table.findElement(By.tagName("thead"));
+        List<WebElement> dates = tHead.findElements(By.tagName("td"));
+        WebElement tBody = table.findElement(By.tagName("tbody"));
+        WebElement tableRow = tBody.findElement(By.tagName("tr"));
         List<WebElement> tdElements = tableRow.findElements(By.tagName("td"));
+
         for (WebElement tdElement : tdElements) {
             int tdIndex = tdElements.indexOf(tdElement);
-            WebElement correspondingTr = elements.get(tdIndex);
-            String dateString = correspondingTr.getAttribute("data-date");
+            WebElement dateWebElement = dates.get(tdIndex);
+            String dateString = dateWebElement.getAttribute("data-date");
             Date dayDateObject = null;
             try {
                 dayDateObject = new SimpleDateFormat("yyyy-MM-dd").parse(dateString);
@@ -178,12 +213,13 @@ public class CalendarPage extends WebDriverBase{
             }
             if (tdElement.getAttribute("class").contains("fc-event-container")) {
                 // Return a triple object tuple
-                eventList.add(new Triple<>(correspondingTr, dayDateObject, true));
+                eventList.add(new Triple<>(tdElement, dayDateObject, true));
             }
             else {
-                eventList.add(new Triple<>(correspondingTr, dayDateObject, false));
+                eventList.add(new Triple<>(tdElement, dayDateObject, false));
             }
         }
+
         return eventList;
     }
 
@@ -192,30 +228,39 @@ public class CalendarPage extends WebDriverBase{
         for(Triple<WebElement, Date, Boolean> event : events) {
             WebElement oneDay = event.getKey();
             Date dayDateObject = event.getValue();
-
             if (dayDateObject != null && dayDateObject.compareTo(endDate) <= 0
                     && dayDateObject.compareTo(startDate) >= 0
                     && !processedDates.contains(dayDateObject)) {
-
                 processedDates.add(dayDateObject);
                 if (event.getBool() == true) {
-                    Actions actions = new Actions(driver);
-                    actions.moveToElement(oneDay).perform();
                     try{
-                        WebElement toolTip = waitForVisibilityOfElements(By.id("tooltipTpl"), 2, null);
-                        String eventTitle = toolTip.findElement(By.xpath(".//div[contains(@class, 'eventTitle')]//span")).getText();
+                        Actions actions = new Actions(driver);
+                        actions.moveToElement(oneDay).pause(Duration.ofSeconds(1)).build().perform();
+                        WebElement tooltipDivClass = waitForVisibilityOfElements(By.className("tooltip"), 2, null);
+                        WebElement tooltipTpl = tooltipDivClass.findElement(By.id("tooltipTpl"));
+                        String eventTitle = tooltipTpl.findElement(By.xpath(".//div[contains(@class, 'eventTitle')]//span")).getText();
                         if (eventTitle.equals("On-Call")) {
-                            WebElement eventTime = toolTip.findElement(By.className("eventTime"));
+                            WebElement eventTime = tooltipTpl.findElement(By.className("eventTime"));
                             CalendarObject oneEvent = new CalendarObject(dayDateObject, eventTime.getText(), timezone);
                             array.add(oneEvent);
                         }
                     } catch(Exception e) {
-//                        System.out.println("Do nothing " + dayDateObject);
+                        System.out.println("Do nothing " + dayDateObject);
                     }
-                } else {
+                }
+                else {
                     CalendarObject noEventObject = new CalendarObject(dayDateObject, "-", timezone);
                     array.add(noEventObject);
                 }
+//                if (!processedDates.contains(dayDateObject)) {
+//                    processedDates.add(dayDateObject);
+//
+//                    // If there are no events, add a placeholder
+//                    if (!event.getBool()) {
+//                        CalendarObject noEventObject = new CalendarObject(dayDateObject, "-", timezone);
+//                        array.add(noEventObject);
+//                    }
+//                }
             }
         }
         return array;
@@ -228,15 +273,16 @@ public class CalendarPage extends WebDriverBase{
 
         for (int attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
             try {
-                WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+                WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(2));
                 wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("dlgProgress0")));
-                Actions actions = new Actions(driver);
-                actions.moveToElement(rightArrow).perform();
-                rightArrow.click();
-//                System.out.println("Right Arrow clicked");
+                ((JavascriptExecutor) driver).executeScript("arguments[0].click();", rightArrow);
+//                Actions actions = new Actions(driver);
+//                actions.moveToElement(rightArrow).pause(Duration.ofSeconds(2)).click().build().perform();
+//                rightArrow;
+                System.out.println("Right arrow clicked");
                 return true;
             } catch (ElementClickInterceptedException | TimeoutException e) {
-                logger.warn("Attempt " + (attempt + 1) + " failed: " + e.getMessage());
+                System.out.println("Attempt " + (attempt + 1) + " failed: " + e.getMessage());
                 if (attempt == RETRY_ATTEMPTS - 1) {
                     return false;
                 }
@@ -247,9 +293,11 @@ public class CalendarPage extends WebDriverBase{
 
     private String timezoneSelect(WebElement calendarElement) {
         WebElement timezoneElement = findElement(calendarElement, By.className("fc-toolbar"));
-        Pattern pattern  = Pattern.compile("\\b(EST|PST|EDT|PDT)\\b");
+        Pattern pattern  = Pattern.compile("\\b(MST|EST|PST|EDT|PDT|CST|HST)\\b");
         String elementText = findElement(timezoneElement, By.className("timezoneSelect")).getText();
         Matcher matcher = pattern.matcher(elementText);
         return matcher.find() ? matcher.group() : null;
     }
+
+
 }

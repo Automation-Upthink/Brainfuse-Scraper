@@ -52,14 +52,14 @@ public class ProcessedObject {
             result.add(calendarObjectFormatter(calendarObject));
 
         }
-        System.out.println(result);
+
         return result;
     }
 
     private ArrayList calendarObjectFormatter(CalendarObject calendarObject) throws ParseException {
         ArrayList result = new ArrayList<>();
         Date dateObject = calendarObject.getDate();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.US);
         SimpleDateFormat dayFormat = new SimpleDateFormat("EEEE");
         String day = dayFormat.format(dateObject);
         String date = dateFormat.format(dateObject);
@@ -118,15 +118,4 @@ public class ProcessedObject {
         return outputFormat.format(date);
     }
 
-
-//    @Override
-//    public String toString() {
-//        return "ProcessedObject{" +
-//                "username='" + username + '\'' +
-//                ", calendarObjects=" + calendarObjects +
-//                ", subject='" + subject + '\'' +
-//                ", singleDual='" + singleDual + '\'' +
-//                ", audioCertified='" + audioCertified + '\'' +
-//                '}';
-//    }
 }

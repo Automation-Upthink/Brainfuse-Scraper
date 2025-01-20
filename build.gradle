@@ -24,9 +24,11 @@ dependencies {
     implementation 'commons-codec:commons-codec:1.15'
     implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
     implementation 'io.github.bonigarcia:webdrivermanager:5.8.0'
-    implementation 'org.seleniumhq.selenium:selenium-java:4.23.0'
+    implementation group: 'org.seleniumhq.selenium', name: 'selenium-java', version: '4.24.0'
+//    implementation 'org.seleniumhq.selenium:selenium-java:latest_version'
     implementation 'com.fasterxml.jackson.core:jackson-core:2.15.2'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+    implementation files('libs/Google_Services_Integration-1.0.jar')
 }
 
 application {

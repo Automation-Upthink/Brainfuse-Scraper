@@ -18,15 +18,13 @@ public class HomePage extends WebDriverBase {
 
     public void navigateToSchedule() {
         if (isNavbarLoaded()) {
-//            System.out.println("Navigated to Schedule");
             WebElement navbar = findElement(navbarLocator);
             WebElement mySchedule = findElement(navbar, scheduleLocator);
 
             try {
-                hoverAndClick(mySchedule, calendarLocator, 20, 0.5);
-//                System.out.println("Calendar element found and clicked");
+                hoverAndClick(mySchedule, calendarLocator, 2, 0.5);
             } catch (Exception e) {
-//                logger.error("Calendar element not found or not visible", e);
+                logger.error("Calendar element not found or not visible", e);
             }
         } else {
             logger.error("Failed to navigate to Schedule because the navbar did not load properly.");

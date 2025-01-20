@@ -22,4 +22,9 @@ public class Triple<K, V, T> {
     public T getBool() {
         return bool;
     }
+
+    @Override
+    public String toString() {
+        return "" + getKey() + " " + getValue() + " " + getBool();
+    }
 }

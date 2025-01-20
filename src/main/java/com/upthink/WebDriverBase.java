@@ -79,12 +79,11 @@ public class WebDriverBase {
     public void hoverAndClick(WebElement parent, By locator, Integer timeout, Double pollFrequency) {
         Actions actions = new Actions(driver);
         actions.moveToElement(parent).perform(); // Ensure parent is hovered first
-//        System.out.println("Hovered over parent element");
 
         // Wait for the child element to be visible and clickable
         WebElement child = waitUntil(ExpectedConditions.elementToBeClickable(locator), timeout, pollFrequency);
         actions.moveToElement(child).click().perform();
-//        System.out.println("Hovered over and clicked on child element");
+
     }
 
     public WebElement findElement(By locator) {

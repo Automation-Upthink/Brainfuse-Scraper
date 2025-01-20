@@ -63,7 +63,6 @@ public class WebScraperTask implements Callable<List<List<String>>> {
             LoginPage loginPage = new LoginPage(driver);
             loginPage.navigateTo("https://www.brainfuse.com/login");
             if (loginPage.login(username, password)) {
-                System.out.println("Login Successful for " + username + "!");
                 result = navigateAndExtractCalendar(driver);
             } else {
                 System.out.println("Login Failed for " + username + "!");
@@ -81,12 +80,12 @@ public class WebScraperTask implements Callable<List<List<String>>> {
         Calendar today = getStartOfDay();
         Calendar endDate = getEndDate(today);
 
-        homePage.navigateTo("https://www.brainfuse.com/tutor/tutorhome.asp");
-        homePage.navigateToSchedule();
-
-        CalendarPage calendarPage = new CalendarPage(driver, today, endDate);
+//        homePage.navigateTo("https://www.brainfuse.com/tutor/tutorhome.asp");
+//        homePage.navigateToSchedule();
+        CalendarPage calendarPage = new CalendarPage(driver, today, endDate, username);
+        calendarPage.navigateTo("https://www.brainfuse.com/tutor/tutorsched.asp#date=" + getTimeInMillis() + "&v=month");
         ArrayList<CalendarObject> calendarObjects =  calendarPage.extractCalendar();
-        System.out.println(calendarObjects);
+
         ProcessedObject processedObject = new ProcessedObject(username, calendarObjects, subject, singleDual, audioCertified);
         return processedObject.processObject();
 
@@ -99,6 +98,18 @@ public class WebScraperTask implements Callable<List<List<String>>> {
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         return calendar;
+    }
+
+    private long getTimeInMillis() {
+        Calendar calendar = getStartOfDay();
+        long timeInMillis = calendar.getTimeInMillis();
+        // Get the actual zone and DST offsets in milliseconds
+        int zoneOffset = calendar.get(Calendar.ZONE_OFFSET);
+        int dstOffset = calendar.get(Calendar.DST_OFFSET);
+        // Calculate the total offset
+        long totalOffsetMillis = (long) zoneOffset + (long) dstOffset;
+
+        return timeInMillis + totalOffsetMillis;
     }
 
     private Calendar getEndDate(Calendar startDate) {
