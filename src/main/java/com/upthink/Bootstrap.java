@@ -46,8 +46,75 @@ public class Bootstrap {
                 .getRange(2, 1, previousBfSchedulesheet.getLastRow()-1, previousBfSchedulesheet.getLastColumn())
                 .getValues();
 
-//        previousBfSchedulesheet.getRange(2, 1, previousBfSchedulesheet.getLastRow(), previousBfSchedulesheet.getLastColumn()).clear();
-//        previousBfSchedulesheet.getRange(2, 1, bfScheduleValues.size(), bfScheduleValues.get(0).size()).setValues(bfScheduleValues);
+        previousBfSchedulesheet
+                .getRange(2, 1, previousBfSchedulesheet.getLastRow(), previousBfSchedulesheet.getLastColumn()).clear();
+        previousBfSchedulesheet
+                .getRange(2, 1, bfScheduleValues.size(), bfScheduleValues.get(0).size()).setValues(bfScheduleValues);
+
+        bfSchedulesheet
+                .getRange(2, 1, bfSchedulesheet.getLastRow(), bfSchedulesheet.getLastColumn()).clear();
+
+
+        Spreadsheet accountDetailsSpreadsheet = Spreadsheet.openById(ACCOUNT_DETAILS_SPREADSHEET_ID);
+        // Do things...
+        Sheet passwordSheet = accountDetailsSpreadsheet.getSheetByName("All_Accts&Passwords");
+        List<List<Object>> passwordSheetValues = passwordSheet
+                .getRange(1, 1, passwordSheet.getLastRow(), passwordSheet.getLastColumn())
+                .getValues();
+
+        ExecutorService executor = Executors.newFixedThreadPool(8);
+        CompletionService<List<List<String>>> completionService = new ExecutorCompletionService<>(executor);
+
+        passwordSheetValues.stream()
+                .skip(1)
+                .filter(oneRow -> oneRow.size() >= 5)
+                .map(oneRow -> {
+                    String username = safeCast(oneRow.get(0), String.class);
+                    String password = safeCast(oneRow.get(1), String.class);
+                    String subject = safeCast(oneRow.get(2), String.class);
+                    String singleDual = safeCast(oneRow.get(3), String.class);
+                    String audioCertified = safeCast(oneRow.get(4), String.class);
+                    return new WebScraperTask(username, password, subject, singleDual, audioCertified);
+                }).forEach(completionService::submit);
+
+        // Process the results as they complete
+        int startRow = 2; // Start writing from row 2 since row 1 is the header
+        for (int i = 0; i < passwordSheetValues.size(); i++) {
+            try {
+                Future<List<List<String>>> future = completionService.take();
+                List<List<String>> res = future.get();
+                List<List<Object>> result = new ArrayList<>();
+                // Convert String rows to Object rows
+                for (List<String> row : res) {
+                    result.add(new ArrayList<>(row));
+                }
+                int numRows = result.size(); // Number of rows in the current batch
+
+                synchronized (writeLock) {
+                    // We now pass the row count (numRows) and column count (lastCol)
+                    int lastCol = bfSchedulesheet.getLastColumn();  // e.g. 10 if column J is the last non-empty col
+                    String range = bfSchedulesheet
+                            .getRange(startRow, 1, numRows, lastCol)
+                            .getA1Notation();
+
+                    // Actually write to the sheet (uncomment in real code)
+                    bfSchedulesheet
+                            .getRange(startRow, 1, numRows, lastCol)
+                            .setValues(result);
+
+                    // Move the start row down for the next batch
+                    if (numRows > 0) {
+                        startRow += numRows;
+                    }
+                }
+
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Shut down the executor
+        executor.shutdown();
 
         Map<String, Map<String, Double>> comparedSubjectHours = DataProcessor.compareSubjectHours(bfScheduleValues, previousBfScheduleValues);
 
@@ -57,7 +124,6 @@ public class Bootstrap {
         // Compare the two sheets and process the differences
         try {
             Map<CompositeKey, List<Map<String, String>>> differencedData = DataProcessor.getDifferencedData(formattedBfScheduleValues, formattedPreviousBfScheduleValues);
-            System.out.println(differencedData);
 
             // Initialize lists to store categorized shifts
             List<String> shiftAdded = new ArrayList<>();
@@ -87,8 +153,6 @@ public class Bootstrap {
                 } else {
                     shiftChanged.add(accountNumber + " (Subject: " + subject + ")");
                 }
-//                }
-
             }
 
             // Generate unique and concatenated shift strings
@@ -99,9 +163,6 @@ public class Bootstrap {
             String shiftAddedStr = "New shift added for these accounts: " + uniqueShiftAdded;
             String shiftDeletedStr = "Shift deleted for these accounts: " + uniqueShiftDeleted;
             String shiftChangedStr = "Change in shift timings for these accounts: " + uniqueShiftChanged;
-
-            // Combine all shift changes into one email message
-//            String emailMessage = String.join("\n", shiftAddedStr, shiftDeletedStr, shiftChangedStr);
 
             String emailMessage = "<p>" + shiftAddedStr + "</p>"
                     + "<p>" + shiftDeletedStr + "</p>"
@@ -135,75 +196,6 @@ public class Bootstrap {
         } catch (MessagingException e) {
             throw new RuntimeException(e);
         }
-
-
-//        Spreadsheet accountDetailsSpreadsheet = Spreadsheet.openById(ACCOUNT_DETAILS_SPREADSHEET_ID);
-//        // Do things...
-//        Sheet passwordSheet = accountDetailsSpreadsheet.getSheetByName("All_Accts&Passwords");
-//        List<List<Object>> passwordSheetValues = passwordSheet
-//                .getRange(1, 1, passwordSheet.getLastRow(), passwordSheet.getLastColumn())
-//                .getValues();
-//
-//        List<List<Object>> someObject = new ArrayList<>(
-//                Arrays.asList(
-//                        new ArrayList<>(List.of(1, 2)),
-//                        new ArrayList<>(List.of(3, 4))
-//                )
-//        );
-//
-//        ExecutorService executor = Executors.newFixedThreadPool(8);
-//        CompletionService<List<List<String>>> completionService = new ExecutorCompletionService<>(executor);
-//
-//        passwordSheetValues.stream()
-//                .skip(1)
-//                .filter(oneRow -> oneRow.size() >= 5)
-//                .map(oneRow -> {
-//                    String username = safeCast(oneRow.get(0), String.class);
-//                    String password = safeCast(oneRow.get(1), String.class);
-//                    String subject = safeCast(oneRow.get(2), String.class);
-//                    String singleDual = safeCast(oneRow.get(3), String.class);
-//                    String audioCertified = safeCast(oneRow.get(4), String.class);
-//                    return new WebScraperTask(username, password, subject, singleDual, audioCertified);
-//                }).forEach(completionService::submit);
-//
-//        // Process the results as they complete
-//        int startRow = 2; // Start writing from row 2 since row 1 is the header
-//        for (int i = 0; i < passwordSheetValues.size(); i++) {
-//            try {
-//                Future<List<List<String>>> future = completionService.take();
-//                List<List<String>> res = future.get();
-//                List<List<Object>> result = new ArrayList<>();
-//                // Convert String rows to Object rows
-//                for (List<String> row : res) {
-//                    result.add(new ArrayList<>(row));
-//                }
-//                int numRows = result.size(); // Number of rows in the current batch
-//
-//                synchronized (writeLock) {
-//                    // We now pass the row count (numRows) and column count (lastCol)
-//                    int lastCol = bfSchedulesheet.getLastColumn();  // e.g. 10 if column J is the last non-empty col
-//                    String range = bfSchedulesheet
-//                            .getRange(startRow, 1, numRows, lastCol)
-//                            .getA1Notation();
-//
-//                    // Actually write to the sheet (uncomment in real code)
-//                     bfSchedulesheet
-//                         .getRange(startRow, 1, numRows, lastCol)
-//                         .setValues(result);
-//
-//                    // Move the start row down for the next batch
-//                    if (numRows > 0) {
-//                        startRow += numRows;
-//                    }
-//                }
-//
-//            } catch (InterruptedException | ExecutionException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//
-//        // Shut down the executor
-//        executor.shutdown();
     }
 
 
