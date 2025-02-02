@@ -3,8 +3,7 @@ name: Gradle CI/CD
 on:
   schedule:
     - cron: '0 2 * * *'  # Runs at 2:00 AM UTC daily. Adjust if needed.
-  workflow_dispatch:
-
+  workflow_dispatch:   # Allows manual triggering from the GitHub Actions UI
 
 jobs:
   build-and-deploy:
@@ -23,11 +22,9 @@ jobs:
       - name: Cache Gradle dependencies and wrapper
         uses: actions/cache@v3
         with:
-          # Cache Gradle caches and wrapper files
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          # Key based on OS and gradle file changes
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
@@ -35,5 +32,8 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - name: Build with Gradle
-        run: ./gradlew build --build-cache
+      - name: Build Shadow JAR
+        run: ./gradlew clean shadowJar --build-cache
+
+      - name: Run Application
+        run: java -jar build/libs/BF-Schedule-Scraper.jar
