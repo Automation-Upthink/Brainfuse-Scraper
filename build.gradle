@@ -23,12 +23,12 @@ dependencies {
     implementation 'com.sun.mail:javax.mail:1.6.2'
     implementation 'commons-codec:commons-codec:1.15'
 //    implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
-    implementation 'io.github.bonigarcia:webdrivermanager:5.8.0'
+//    implementation 'io.github.bonigarcia:webdrivermanager:5.8.0'
     implementation group: 'org.seleniumhq.selenium', name: 'selenium-java', version: '4.27.0'
     implementation 'com.fasterxml.jackson.core:jackson-core:2.15.2'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
     // Add the no-operation SLF4J binding to suppress SLF4J warnings
-    runtimeOnly 'org.slf4j:slf4j-nop:2.0.7'
+//    runtimeOnly 'org.slf4j:slf4j-nop:2.0.7'
     implementation files('libs/Google_Services_Integration-1.0.jar')
 }
 

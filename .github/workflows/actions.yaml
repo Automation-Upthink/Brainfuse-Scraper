@@ -35,5 +35,11 @@ jobs:
       - name: Build Shadow JAR
         run: ./gradlew clean shadowJar --build-cache
 
-      - name: Run Application
-        run: java -Djava.util.logging.config.file=src/main/resources/logging.properties -jar build/libs/BF-Schedule-Scraper.jars
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
+        run: docker build -t bf-schedule-scraper .
+
+      - name: Run Docker container
+        run: docker run --rm bf-schedule-scraper
