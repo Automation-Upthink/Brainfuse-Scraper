@@ -2,11 +2,11 @@ name: Gradle CI/CD
 
 on:
   schedule:
-    - cron: '0 2 * * *'  # Runs at 2:00 AM UTC daily. Adjust if needed.
-  workflow_dispatch:   # Allows manual triggering from the GitHub Actions UI
+    - cron: '0 2 * * *'  # Runs at 2:00 AM UTC daily (adjust as needed)
+  workflow_dispatch:      # Allows manual triggering
 
 jobs:
-  build-and-deploy:
+  build-and-run:
     runs-on: ubuntu-latest
 
     steps:
@@ -22,6 +22,7 @@ jobs:
       - name: Cache Gradle dependencies and wrapper
         uses: actions/cache@v3
         with:
+          # Cache Gradle caches and wrapper files to speed up subsequent builds
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
@@ -32,14 +33,8 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - name: Build Shadow JAR
-        run: ./gradlew clean shadowJar --build-cache
+      - name: Build with Gradle
+        run: ./gradlew build --build-cache
 
-      - name: Build Docker image
-        run: docker build -t bf-schedule-scraper .
-
-      - name: Run Docker container
-        run: docker run --rm bf-schedule-scraper
-#
-#
-#
+      - name: Run the Gradle application
+        run: ./gradlew run

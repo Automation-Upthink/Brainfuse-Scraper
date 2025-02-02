@@ -46,14 +46,19 @@ tasks.withType(JavaCompile) {
     options.incremental = true
 }
 
+tasks.jar {
+    // Optional if you don't want the plain jar at all
+    enabled = false
+}
 
-tasks.named('shadowJar') {
-    archiveFileName.set('BF-Schedule-Scraper.jar')
+tasks.shadowJar {
+    archiveBaseName.set("BF-Schedule-Scraper")
+    archiveVersion.set("")
+    archiveFileName.set("BF-Schedule-Scraper.jar")
     manifest {
         attributes 'Main-Class': 'com.upthink.Bootstrap'
     }
 }
-
 sourceSets {
     main {
         java {

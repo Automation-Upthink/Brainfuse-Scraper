@@ -16,7 +16,7 @@ import com.upthink.pages.CalendarPage;
 import com.upthink.pages.HomePage;
 import com.upthink.pages.LoginPage;
 
-//import io.github.bonigarcia.wdm.WebDriverManager;
+import io.github.bonigarcia.wdm.WebDriverManager;
 
 public class WebScraperTask implements Callable<List<List<String>>> {
 
@@ -35,16 +35,16 @@ public class WebScraperTask implements Callable<List<List<String>>> {
     }
 
     private WebDriver setupDriver() {
-//        WebDriverManager.chromedriver().setup();
-//        ChromeOptions options = new ChromeOptions();
-        System.setProperty("webdriver.chrome.driver", "/usr/local/bin/chromedriver");
+        WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
-        // Set the Chromium binary location via an environment variable.
-        // In the Dockerfile, we set CHROMIUM_BIN to /usr/bin/chromium-browser.
-        String chromeBinary = System.getenv("CHROMIUM_BIN");
-        if (chromeBinary != null && !chromeBinary.isEmpty()) {
-            options.setBinary(chromeBinary);
-        }
+//        System.setProperty("webdriver.chrome.driver", "/usr/local/bin/chromedriver");
+//        ChromeOptions options = new ChromeOptions();
+//        // Set the Chromium binary location via an environment variable.
+//        // In the Dockerfile, we set CHROMIUM_BIN to /usr/bin/chromium-browser.
+//        String chromeBinary = System.getenv("CHROMIUM_BIN");
+//        if (chromeBinary != null && !chromeBinary.isEmpty()) {
+//            options.setBinary(chromeBinary);
+//        }
 
         options.addArguments(
                 "--headless",
