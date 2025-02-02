@@ -84,6 +84,7 @@ public class WebScraperTask implements Callable<List<List<String>>> {
 //        homePage.navigateToSchedule();
         CalendarPage calendarPage = new CalendarPage(driver, today, endDate, username);
         calendarPage.navigateTo("https://www.brainfuse.com/tutor/tutorsched.asp#date=" + getTimeInMillis() + "&v=month");
+        // sleep for 5 seconds
         ArrayList<CalendarObject> calendarObjects =  calendarPage.extractCalendar();
 
         ProcessedObject processedObject = new ProcessedObject(username, calendarObjects, subject, singleDual, audioCertified);

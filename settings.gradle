@@ -6,3 +6,12 @@
  */
 
 rootProject.name = 'BF-Schedule-Scraper'
+
+
+// In settings.gradle
+buildCache {
+    local {
+        enabled = true
+        directory = "${rootDir}/.gradle/build-cache"
+    }
+}

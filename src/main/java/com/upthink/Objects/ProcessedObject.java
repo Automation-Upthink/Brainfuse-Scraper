@@ -57,7 +57,6 @@ public class ProcessedObject {
     }
 
     private ArrayList calendarObjectFormatter(CalendarObject calendarObject) throws ParseException {
-        ArrayList result = new ArrayList<>();
         Date dateObject = calendarObject.getDate();
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.US);
         SimpleDateFormat dayFormat = new SimpleDateFormat("EEEE");
@@ -68,7 +67,7 @@ public class ProcessedObject {
         String endTime;
         String shiftAvailable;
         String shiftDuration;
-        if(timespan == "-") {
+        if(timespan.equals("-")) {
             startTime = "-";
             endTime = "-";
             shiftAvailable = "No";
@@ -81,10 +80,10 @@ public class ProcessedObject {
             shiftAvailable = "Yes";
         }
 
-       result.addAll(Arrays.asList(date, day, username, subject, singleDual,
-               audioCertified, calendarObject.getTimezone(),
-               startTime, endTime, shiftAvailable, shiftDuration
-       ));
+        ArrayList result = new ArrayList<>(Arrays.asList(date, day, username, subject, singleDual,
+                audioCertified, calendarObject.getTimezone(),
+                startTime, endTime, shiftAvailable, shiftDuration
+        ));
         return result;
     }
 

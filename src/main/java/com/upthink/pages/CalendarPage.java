@@ -99,6 +99,7 @@ public class CalendarPage extends WebDriverBase{
             if (!clickNextButton(tutoringContent)) {
                 break;
             }
+//            waitForNewFcEventContainerToLoad();
         }
         return events;
     }
@@ -134,7 +135,7 @@ public class CalendarPage extends WebDriverBase{
         boolean elementVisible = false;
         for (int attempt=0; attempt<maxRetries; attempt++) {
             try {
-                waitForVisibilityOfElements(By.className("fc-event-container"), 50, 10.0);
+                waitForVisibilityOfElements(By.className("fc-event-container"), 30, 10.0);
                 elementVisible = true;
                 break;
             } catch (Exception e) {
@@ -276,9 +277,7 @@ public class CalendarPage extends WebDriverBase{
                 WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(2));
                 wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("dlgProgress0")));
                 ((JavascriptExecutor) driver).executeScript("arguments[0].click();", rightArrow);
-//                Actions actions = new Actions(driver);
-//                actions.moveToElement(rightArrow).pause(Duration.ofSeconds(2)).click().build().perform();
-//                rightArrow;
+
                 System.out.println("Right arrow clicked");
                 return true;
             } catch (ElementClickInterceptedException | TimeoutException e) {
@@ -291,12 +290,22 @@ public class CalendarPage extends WebDriverBase{
         return false;
     }
 
+    /**
+     * Waits for at least one fresh fc-event-container to be present/visible
+     * after the page refreshes or updates.
+     */
+    private void waitForNewFcEventContainerToLoad() {
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.className("fc-event-container")));
+    }
+
+
     private String timezoneSelect(WebElement calendarElement) {
         WebElement timezoneElement = findElement(calendarElement, By.className("fc-toolbar"));
         Pattern pattern  = Pattern.compile("\\b(MST|EST|PST|EDT|PDT|CST|HST)\\b");
         String elementText = findElement(timezoneElement, By.className("timezoneSelect")).getText();
         Matcher matcher = pattern.matcher(elementText);
-        return matcher.find() ? matcher.group() : null;
+        return matcher.find() ? matcher.group() : "-";
     }
 
 

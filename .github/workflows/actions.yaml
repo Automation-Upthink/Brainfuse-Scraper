@@ -1,57 +1,39 @@
 name: Gradle CI/CD
 
 on:
-  push:
-    branches:
-      - main
+  schedule:
+    - cron: '0 2 * * *'  # Runs at 2:00 AM UTC daily. Adjust if needed.
+  workflow_dispatch:
+
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      - name: Checkout repository content
+        uses: actions/checkout@v3
 
-      - name: Set up JDK 21
+      - name: Set up JDK 21 (Temurin)
         uses: actions/setup-java@v3
         with:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Grant execute permission for gradlew
+      - name: Cache Gradle dependencies and wrapper
+        uses: actions/cache@v3
+        with:
+          # Cache Gradle caches and wrapper files
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          # Key based on OS and gradle file changes
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
       - name: Build with Gradle
-        run: ./gradlew build --no-daemon
-
-      - name: Create Shadow JAR
-        run: ./gradlew shadowJar --no-daemon
-
-      - name: Run main class
-        run: java -cp build/libs/BF-Schedule-Scraper.jar com.upthink.Bootstrap
-
-      - name: Run tests
-        run: ./gradlew test --no-daemon
-
-      - name: Archive build artifacts
-        if: success()
-        uses: actions/upload-artifact@v3
-        with:
-          name: app-artifacts
-          path: build/libs/*.jar
-
-      - name: Deploy to staging
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          # Add deployment script or commands here
-          echo "Deploying to staging environment..."
-
-      - name: Notify deployment status
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          # Add notification script or commands here
-          echo "Deployment to staging completed."
-
-      - name: Clean up
-        run: ./gradlew clean --no-daemon
+        run: ./gradlew build --build-cache

@@ -6,8 +6,8 @@ plugins {
 
 //group = 'com.upthink'
 version = '1.0'
-sourceCompatibility = 11
-targetCompatibility = 11
+sourceCompatibility = 21
+targetCompatibility = 21
 
 repositories {
     mavenCentral()
@@ -24,8 +24,7 @@ dependencies {
     implementation 'commons-codec:commons-codec:1.15'
     implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
     implementation 'io.github.bonigarcia:webdrivermanager:5.8.0'
-    implementation group: 'org.seleniumhq.selenium', name: 'selenium-java', version: '4.24.0'
-//    implementation 'org.seleniumhq.selenium:selenium-java:latest_version'
+    implementation group: 'org.seleniumhq.selenium', name: 'selenium-java', version: '4.27.0'
     implementation 'com.fasterxml.jackson.core:jackson-core:2.15.2'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
     implementation files('libs/Google_Services_Integration-1.0.jar')
@@ -38,6 +37,13 @@ application {
 tasks.withType(JavaExec).configureEach {
     mainClass.set('com.upthink.Bootstrap')
 }
+
+
+// Enable incremental compilation for Java tasks (this is usually enabled by default)
+tasks.withType(JavaCompile) {
+    options.incremental = true
+}
+
 
 tasks.named('shadowJar') {
     archiveFileName.set('BF-Schedule-Scraper.jar')
@@ -56,3 +62,5 @@ sourceSets {
         }
     }
 }
+
+

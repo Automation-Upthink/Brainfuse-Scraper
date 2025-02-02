@@ -42,9 +42,6 @@ public class Bootstrap {
                 .getValues();
 
         Sheet previousBfSchedulesheet = scaperSpreadsheet.getSheetByName("Previous BF Schedule");
-        List<List<Object>> previousBfScheduleValues = previousBfSchedulesheet
-                .getRange(2, 1, previousBfSchedulesheet.getLastRow()-1, previousBfSchedulesheet.getLastColumn())
-                .getValues();
 
         previousBfSchedulesheet
                 .getRange(2, 1, previousBfSchedulesheet.getLastRow(), previousBfSchedulesheet.getLastColumn()).clear();
@@ -54,7 +51,6 @@ public class Bootstrap {
         bfSchedulesheet
                 .getRange(2, 1, bfSchedulesheet.getLastRow(), bfSchedulesheet.getLastColumn()).clear();
 
-
         Spreadsheet accountDetailsSpreadsheet = Spreadsheet.openById(ACCOUNT_DETAILS_SPREADSHEET_ID);
         // Do things...
         Sheet passwordSheet = accountDetailsSpreadsheet.getSheetByName("All_Accts&Passwords");
@@ -62,59 +58,12 @@ public class Bootstrap {
                 .getRange(1, 1, passwordSheet.getLastRow(), passwordSheet.getLastColumn())
                 .getValues();
 
-        ExecutorService executor = Executors.newFixedThreadPool(8);
-        CompletionService<List<List<String>>> completionService = new ExecutorCompletionService<>(executor);
+        scrapeBrainfuse(passwordSheetValues, bfSchedulesheet, 4);
 
-        passwordSheetValues.stream()
-                .skip(1)
-                .filter(oneRow -> oneRow.size() >= 5)
-                .map(oneRow -> {
-                    String username = safeCast(oneRow.get(0), String.class);
-                    String password = safeCast(oneRow.get(1), String.class);
-                    String subject = safeCast(oneRow.get(2), String.class);
-                    String singleDual = safeCast(oneRow.get(3), String.class);
-                    String audioCertified = safeCast(oneRow.get(4), String.class);
-                    return new WebScraperTask(username, password, subject, singleDual, audioCertified);
-                }).forEach(completionService::submit);
-
-        // Process the results as they complete
-        int startRow = 2; // Start writing from row 2 since row 1 is the header
-        for (int i = 0; i < passwordSheetValues.size(); i++) {
-            try {
-                Future<List<List<String>>> future = completionService.take();
-                List<List<String>> res = future.get();
-                List<List<Object>> result = new ArrayList<>();
-                // Convert String rows to Object rows
-                for (List<String> row : res) {
-                    result.add(new ArrayList<>(row));
-                }
-                int numRows = result.size(); // Number of rows in the current batch
-
-                synchronized (writeLock) {
-                    // We now pass the row count (numRows) and column count (lastCol)
-                    int lastCol = bfSchedulesheet.getLastColumn();  // e.g. 10 if column J is the last non-empty col
-                    String range = bfSchedulesheet
-                            .getRange(startRow, 1, numRows, lastCol)
-                            .getA1Notation();
-
-                    // Actually write to the sheet (uncomment in real code)
-                    bfSchedulesheet
-                            .getRange(startRow, 1, numRows, lastCol)
-                            .setValues(result);
-
-                    // Move the start row down for the next batch
-                    if (numRows > 0) {
-                        startRow += numRows;
-                    }
-                }
-
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
-        }
-
-        // Shut down the executor
-        executor.shutdown();
+        previousBfSchedulesheet = scaperSpreadsheet.getSheetByName("Previous BF Schedule");
+        List<List<Object>> previousBfScheduleValues = previousBfSchedulesheet
+                .getRange(2, 1, previousBfSchedulesheet.getLastRow()-1, previousBfSchedulesheet.getLastColumn())
+                .getValues();
 
         Map<String, Map<String, Double>> comparedSubjectHours = DataProcessor.compareSubjectHours(bfScheduleValues, previousBfScheduleValues);
 
@@ -174,7 +123,7 @@ public class Bootstrap {
             String fromEmail = "automation@upthink.com";
             String toEmail = "sreenjay.sen@upthink.com";
             List<String> ccEmails = Arrays.asList("sreenjay.sen@upthink.com", "automation@upthink.com");
-            String subject = "Test Email";
+            String subject = "BF Shift changes";
             String bodyText = emailMessage;
 
             emailService.sendEmails(fromEmail, toEmail, ccEmails, subject, bodyText);
@@ -207,6 +156,80 @@ public class Bootstrap {
         }
     }
 
+
+    private void scrapeBrainfuse(List<List<Object>> passwordSheetValues, Sheet bfSchedulesheet, int threads) {
+        ExecutorService executor = Executors.newFixedThreadPool(4);
+        CompletionService<List<List<String>>> completionService = new ExecutorCompletionService<>(executor);
+
+        List<WebScraperTask> tasks = passwordSheetValues.stream()
+                .skip(1)
+                .filter(oneRow -> oneRow.size() >= 5)
+                .map(oneRow -> {
+                    String username = safeCast(oneRow.get(0), String.class);
+                    String password = safeCast(oneRow.get(1), String.class);
+                    String subject = safeCast(oneRow.get(2), String.class);
+                    String singleDual = safeCast(oneRow.get(3), String.class);
+                    String audioCertified = safeCast(oneRow.get(4), String.class);
+                    return new WebScraperTask(username, password, subject, singleDual, audioCertified);
+                }).collect(Collectors.toList());
+
+
+        // Submit
+        for (WebScraperTask task : tasks) {
+            completionService.submit(task);
+        }
+
+        // Process the results as they complete
+        int startRow = 2; // Start writing from row 2 since row 1 is the header
+        for (int i = 0; i < tasks.size(); i++) {
+            try {
+                Future<List<List<String>>> future = completionService.take();
+                List<List<String>> res = future.get();
+                List<List<Object>> result = new ArrayList<>();
+                // Convert String rows to Object rows
+                for (List<String> row : res) {
+                    result.add(new ArrayList<>(row));
+                }
+                int numRows = result.size(); // Number of rows in the current batch
+
+                synchronized (writeLock) {
+                    // We now pass the row count (numRows) and column count (lastCol)
+                    int lastCol = bfSchedulesheet.getLastColumn();  // e.g. 10 if column J is the last non-empty col
+                    String range = bfSchedulesheet
+                            .getRange(startRow, 1, numRows, lastCol)
+                            .getA1Notation();
+
+                    // Actually write to the sheet (uncomment in real code)
+                    bfSchedulesheet
+                            .getRange(startRow, 1, numRows, lastCol)
+                            .setValues(result);
+
+                    // Move the start row down for the next batch
+                    if (numRows > 0) {
+                        startRow += numRows;
+                    }
+                }
+
+            } catch (InterruptedException | ExecutionException | IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Shut down the executor
+        executor.shutdown();
+
+        try {
+            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) { // Wait for 60 seconds
+                executor.shutdownNow(); // Force shutdown if not terminated
+                if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                    System.err.println("Executor did not terminate properly!");
+                }
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow(); // Re-interrupt if current thread is interrupted
+            Thread.currentThread().interrupt();
+        }
+    }
 
 
     public static void main(String []args) throws GeneralSecurityException, IOException {
