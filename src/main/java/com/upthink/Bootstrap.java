@@ -246,7 +246,7 @@ public class Bootstrap {
             credentialFilePath = dotenv.get(ENV_GMAIL_CLIENT_SECRET_JSON);
         }
         try {
-            Sheets service = GoogleAuthentication.buildSheetsServiceWithOAuth2FilePath(credentialFilePath);
+            Sheets service = GoogleAuthentication.buildSheetsServiceWithOAuth2Base64(credentialFilePath);
             Spreadsheet.initializeService(service);
 
         } catch (GeneralSecurityException | IOException  e) {
@@ -264,7 +264,7 @@ public class Bootstrap {
             credentialFilePath = dotenv.get(ENV_GMAIL_CLIENT_SECRET_JSON);
         }
         try {
-            Gmail service = GoogleAuthentication.buildGmailServiceWithOAuth2FilePath(credentialFilePath);
+            Gmail service = GoogleAuthentication.buildGmailServiceWithOAuth2Base64(credentialFilePath);
             GMailService.initializeService(service); // Initialize or use the service as needed
         } catch (GeneralSecurityException | IOException e) {
             throw new RuntimeException(e);

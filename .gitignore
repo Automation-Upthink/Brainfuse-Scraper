@@ -6,3 +6,5 @@ build
 
 # git ignore credentials.json
 src/main/resources/credentials.json
+# git ignore credentials.txt
+src/main/resources/credentials.txt
