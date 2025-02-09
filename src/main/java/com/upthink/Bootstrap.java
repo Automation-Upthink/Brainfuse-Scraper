@@ -26,7 +26,7 @@ import javax.mail.MessagingException;
 public class Bootstrap {
 
     private static final String ACCOUNT_DETAILS_SPREADSHEET_ID = "11g3ManGTll90QFjT0oy1rXOVYyBLqh_R020fh13Ihak";
-    private static final String BF_SCHEDULE_UPDATES_ID = "1lt5ureEp8LzvaiXV015RSNLjjW0w3Tt5kaEbV3qQ8ao";
+    private static final String BF_SCHEDULE_UPDATES_ID =  "1lt5ureEp8LzvaiXV015RSNLjjW0w3Tt5kaEbV3qQ8ao"; //"1lt5ureEp8LzvaiXV015RSNLjjW0w3Tt5kaEbV3qQ8ao";
     private static final String ENV_GMAIL_CLIENT_SECRET_JSON = "OAUTH2_CREDENTIALS_FILE";
     private static final Object writeLock = new Object();
     private final LocalDate yesterday = LocalDate.now().minusDays(1);
@@ -37,32 +37,32 @@ public class Bootstrap {
         Spreadsheet scaperSpreadsheet = Spreadsheet.openById(BF_SCHEDULE_UPDATES_ID);
 
         Sheet bfSchedulesheet = scaperSpreadsheet.getSheetByName("BF Schedule");
-        List<List<Object>> bfScheduleValues = bfSchedulesheet
-                .getRange(2, 1, bfSchedulesheet.getLastRow()-1, bfSchedulesheet.getLastColumn())
-                .getValues();
+
 
         Sheet previousBfSchedulesheet = scaperSpreadsheet.getSheetByName("Previous BF Schedule");
 
-        previousBfSchedulesheet
-                .getRange(2, 1, previousBfSchedulesheet.getLastRow(), previousBfSchedulesheet.getLastColumn()).clear();
-        previousBfSchedulesheet
-                .getRange(2, 1, bfScheduleValues.size(), bfScheduleValues.get(0).size()).setValues(bfScheduleValues);
+        // Web scrape the bf accounts
+        scrapeBrainfuse(bfSchedulesheet, previousBfSchedulesheet, 4);
+        // Compare today's and yesterday's schedules
+        compareAndEmail(bfSchedulesheet, previousBfSchedulesheet);
+    }
 
-        bfSchedulesheet
-                .getRange(2, 1, bfSchedulesheet.getLastRow(), bfSchedulesheet.getLastColumn()).clear();
 
-        Spreadsheet accountDetailsSpreadsheet = Spreadsheet.openById(ACCOUNT_DETAILS_SPREADSHEET_ID);
-        // Do things...
-        Sheet passwordSheet = accountDetailsSpreadsheet.getSheetByName("All_Accts&Passwords");
-        List<List<Object>> passwordSheetValues = passwordSheet
-                .getRange(1, 1, passwordSheet.getLastRow(), passwordSheet.getLastColumn())
+    private <T> T safeCast(Object obj, Class<T> clazz) {
+        if (clazz.isInstance(obj)){
+            return (T)obj;
+        } else {
+            return null;
+        }
+    }
+
+
+    private void compareAndEmail(Sheet todayBFSheet, Sheet yesterdayBFSheet) throws IOException {
+        List<List<Object>> bfScheduleValues = todayBFSheet
+                .getRange(2, 1, todayBFSheet.getLastRow(), todayBFSheet.getLastColumn())
                 .getValues();
-
-        scrapeBrainfuse(passwordSheetValues, bfSchedulesheet, 4);
-
-        previousBfSchedulesheet = scaperSpreadsheet.getSheetByName("Previous BF Schedule");
-        List<List<Object>> previousBfScheduleValues = previousBfSchedulesheet
-                .getRange(2, 1, previousBfSchedulesheet.getLastRow()-1, previousBfSchedulesheet.getLastColumn())
+        List<List<Object>> previousBfScheduleValues = yesterdayBFSheet
+                .getRange(2, 1, yesterdayBFSheet.getLastRow()-1, yesterdayBFSheet.getLastColumn())
                 .getValues();
 
         Map<String, Map<String, Double>> comparedSubjectHours = DataProcessor.compareSubjectHours(bfScheduleValues, previousBfScheduleValues);
@@ -137,8 +137,6 @@ public class Bootstrap {
                     "Monthly Hours Projections",
                     "Projected_Numbers.html",
                     templateVariables);
-
-
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -148,17 +146,26 @@ public class Bootstrap {
     }
 
 
-        private <T> T safeCast(Object obj, Class<T> clazz) {
-        if (clazz.isInstance(obj)){
-            return (T)obj;
-        } else {
-            return null;
-        }
-    }
+    private void scrapeBrainfuse(Sheet bfSchedulesheet, Sheet previousBfSchedulesheet, int threads) throws IOException {
+        List<List<Object>> bfScheduleValues = bfSchedulesheet
+                .getRange(2, 1, bfSchedulesheet.getLastRow()-1, bfSchedulesheet.getLastColumn())
+                .getValues();
+        previousBfSchedulesheet
+                .getRange(2, 1, previousBfSchedulesheet.getLastRow(), previousBfSchedulesheet.getLastColumn()).clear();
+        previousBfSchedulesheet
+                .getRange(2, 1, bfScheduleValues.size(), bfScheduleValues.get(0).size()).setValues(bfScheduleValues);
 
+        bfSchedulesheet
+                .getRange(2, 1, bfSchedulesheet.getLastRow(), bfSchedulesheet.getLastColumn()).clear();
 
-    private void scrapeBrainfuse(List<List<Object>> passwordSheetValues, Sheet bfSchedulesheet, int threads) {
-        ExecutorService executor = Executors.newFixedThreadPool(4);
+        Spreadsheet accountDetailsSpreadsheet = Spreadsheet.openById(ACCOUNT_DETAILS_SPREADSHEET_ID);
+        // Do things...
+        Sheet passwordSheet = accountDetailsSpreadsheet.getSheetByName("All_Accts&Passwords");
+        List<List<Object>> passwordSheetValues = passwordSheet
+                .getRange(1, 1, passwordSheet.getLastRow(), passwordSheet.getLastColumn())
+                .getValues();
+
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
         CompletionService<List<List<String>>> completionService = new ExecutorCompletionService<>(executor);
 
         List<WebScraperTask> tasks = passwordSheetValues.stream()
