@@ -42,7 +42,7 @@ public class Bootstrap {
         Sheet previousBfSchedulesheet = scaperSpreadsheet.getSheetByName("Previous BF Schedule");
 
         // Web scrape the bf accounts
-        scrapeBrainfuse(bfSchedulesheet, previousBfSchedulesheet, 4);
+//        scrapeBrainfuse(bfSchedulesheet, previousBfSchedulesheet, 4);
         // Compare today's and yesterday's schedules
         compareAndEmail(bfSchedulesheet, previousBfSchedulesheet);
     }
@@ -95,13 +95,16 @@ public class Bootstrap {
                 String prevValStartTime = prevValues.get("Start Time");
                 String prevValEndTime = prevValues.get("End Time");
 
-                if ((prevValEndTime == null || prevValEndTime.equals("-")) || (prevValStartTime == null || prevValStartTime.equals("-"))) {
+                if ((prevValEndTime == null || prevValEndTime.equals("-") || prevValStartTime == null || prevValStartTime.equals("-")) &&
+                        (currValEndTime != null && !currValEndTime.equals("-") && currValStartTime != null && !currValStartTime.equals("-"))) {
                     shiftAdded.add(accountNumber + " (Subject: " + subject + ")");
-                } else if ((currValEndTime == null || currValEndTime.equals("-")) && (currValStartTime == null || currValStartTime.equals("-"))) {
+                } else if ((currValEndTime == null || currValEndTime.equals("-") || currValStartTime == null || currValStartTime.equals("-")) &&
+                        (prevValEndTime != null && !prevValEndTime.equals("-") && prevValStartTime != null && !prevValStartTime.equals("-"))) {
                     shiftDeleted.add(accountNumber + " (Subject: " + subject + ")");
                 } else {
                     shiftChanged.add(accountNumber + " (Subject: " + subject + ")");
                 }
+
             }
 
             // Generate unique and concatenated shift strings
