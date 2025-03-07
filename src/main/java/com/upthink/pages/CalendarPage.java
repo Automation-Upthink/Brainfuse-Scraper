@@ -146,7 +146,7 @@ public class CalendarPage extends WebDriverBase{
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(startDate);
 
-            while (calendar.getTime().compareTo(endDate) <= 0 && processedDates.size() <= 31) {
+            while (calendar.getTime().compareTo(endDate) <= 0 && processedDates.size() < 31) {
                 Date currentDate = calendar.getTime();
                 // Only add the date if it's within the start and end date range and not already processed
                 if (!processedDates.contains(currentDate)) {
