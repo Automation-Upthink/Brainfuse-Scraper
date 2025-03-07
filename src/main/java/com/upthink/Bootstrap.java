@@ -42,7 +42,7 @@ public class Bootstrap {
         Sheet previousBfSchedulesheet = scaperSpreadsheet.getSheetByName("Previous BF Schedule");
 
         // Web scrape the bf accounts
-//        scrapeBrainfuse(bfSchedulesheet, previousBfSchedulesheet, 4);
+        scrapeBrainfuse(bfSchedulesheet, previousBfSchedulesheet, 4);
         // Compare today's and yesterday's schedules
         compareAndEmail(bfSchedulesheet, previousBfSchedulesheet);
     }
