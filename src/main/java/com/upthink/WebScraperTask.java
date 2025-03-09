@@ -89,7 +89,6 @@ public class WebScraperTask implements Callable<List<List<String>>> {
         HomePage homePage = new HomePage(driver);
         Calendar today = getStartOfDay();
         Calendar endDate = getEndDate(today);
-        System.out.println("End date " + endDate);
 //        homePage.navigateTo("https://www.brainfuse.com/tutor/tutorhome.asp");
 //        homePage.navigateToSchedule();
         CalendarPage calendarPage = new CalendarPage(driver, today, endDate, username);
