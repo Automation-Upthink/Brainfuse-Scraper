@@ -74,7 +74,6 @@ public class WebScraperTask implements Callable<List<List<String>>> {
             if (loginPage.login(username, password)) {
                 result = navigateAndExtractCalendar(driver);
                 System.out.println(result.size());
-                System.out.println(result);
             } else {
                 System.out.println("Login Failed for " + username + "!");
             }
@@ -90,7 +89,7 @@ public class WebScraperTask implements Callable<List<List<String>>> {
         HomePage homePage = new HomePage(driver);
         Calendar today = getStartOfDay();
         Calendar endDate = getEndDate(today);
-
+        System.out.println("End date " + endDate);
 //        homePage.navigateTo("https://www.brainfuse.com/tutor/tutorhome.asp");
 //        homePage.navigateToSchedule();
         CalendarPage calendarPage = new CalendarPage(driver, today, endDate, username);

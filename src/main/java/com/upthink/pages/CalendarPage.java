@@ -248,7 +248,7 @@ public class CalendarPage extends WebDriverBase{
                             array.add(oneEvent);
                         }
                     } catch(Exception e) {
-                        System.out.println("Do nothing " + dayDateObject);
+                        System.out.println("Do nothing for " + dayDateObject + " due to exception: " + e.getMessage());
                     }
                 }
                 else {
