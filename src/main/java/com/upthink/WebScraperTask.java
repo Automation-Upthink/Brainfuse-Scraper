@@ -4,6 +4,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.concurrent.Callable;
 
 import com.upthink.Objects.ProcessedObject;
@@ -58,8 +59,8 @@ public class WebScraperTask implements Callable<List<List<String>>> {
                 "--disable-translate",
                 "--disable-default-apps",
                 "--disable-popup-blocking",
-                "--disable-blink-features=AutomationControlled",
-                "--window-size=1920,1080"
+                "--disable-blink-features=AutomationControlled"
+//                "--window-size=1920,1080"
         );
 
         return new ChromeDriver(options);
@@ -122,6 +123,7 @@ public class WebScraperTask implements Callable<List<List<String>>> {
         long totalOffsetMillis = (long) zoneOffset + (long) dstOffset;
 
         return timeInMillis + totalOffsetMillis;
+//        return calendar.getTimeInMillis();
     }
 
     private Calendar getEndDate(Calendar startDate) {
