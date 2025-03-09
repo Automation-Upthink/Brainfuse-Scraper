@@ -239,7 +239,7 @@ public class CalendarPage extends WebDriverBase{
                     try{
                         Actions actions = new Actions(driver);
                         actions.moveToElement(oneDay).pause(Duration.ofSeconds(1)).build().perform();
-                        WebElement tooltipDivClass = waitForVisibilityOfElements(By.className("tooltip"), 2, null);
+                        WebElement tooltipDivClass = waitForVisibilityOfElements(By.className("tooltip"), 5, null);
                         WebElement tooltipTpl = tooltipDivClass.findElement(By.id("tooltipTpl"));
                         String eventTitle = tooltipTpl.findElement(By.xpath(".//div[contains(@class, 'eventTitle')]//span")).getText();
                         if (eventTitle.equals("On-Call")) {
