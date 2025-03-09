@@ -29,16 +29,26 @@ public class LoginPage extends WebDriverBase{
     }
 
     public boolean login(String username, String password) {
-        try {
-            enterUsername(username);
-            enterPassword(password);
-            clickLoginButton();
-            return isLoginSuccessful();
-        } catch (Exception e) {
-            logger.error("Login attempt failed", e);
-            return false;
+        int maxAttempts = 3;
+        int attempts = 0;
+        while (attempts < maxAttempts) {
+            try {
+                enterUsername(username);
+                enterPassword(password);
+                clickLoginButton();
+                if (isLoginSuccessful()) {
+                    return true;
+                } else {
+                    System.out.print("Login attempt " + (attempts + 1) + " failed. Retrying...");
+                }
+            } catch (Exception e) {
+                System.out.print("Login attempt " + (attempts + 1) + " encountered an exception " + e);
+            }
+            attempts++;
         }
+        return false;
     }
+
 
     public boolean isLoginSuccessful() {
         return driver.getCurrentUrl().contains("tutorhome.asp");
