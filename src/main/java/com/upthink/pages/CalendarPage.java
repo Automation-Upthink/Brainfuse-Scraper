@@ -101,7 +101,9 @@ public class CalendarPage extends WebDriverBase{
             }
 //            waitForNewFcEventContainerToLoad();
         }
-        return events;
+
+        return new ArrayList<>(events.subList(0, Math.min(events.size(), 31)));
+//        return events;
     }
 
 
@@ -227,9 +229,6 @@ public class CalendarPage extends WebDriverBase{
     private ArrayList<CalendarObject> eachDay(List<Triple<WebElement, Date, Boolean>> events, String timezone) {
         ArrayList<CalendarObject> array = new ArrayList<>();
         for(Triple<WebElement, Date, Boolean> event : events) {
-            if (processedDates.size() > 31) {
-                break;
-            }
             WebElement oneDay = event.getKey();
             Date dayDateObject = event.getValue();
             if (dayDateObject != null && dayDateObject.compareTo(endDate) <= 0
