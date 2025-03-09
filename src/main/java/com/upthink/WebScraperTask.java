@@ -73,6 +73,8 @@ public class WebScraperTask implements Callable<List<List<String>>> {
             loginPage.navigateTo("https://www.brainfuse.com/login");
             if (loginPage.login(username, password)) {
                 result = navigateAndExtractCalendar(driver);
+                System.out.println(result.size());
+                System.out.println(result);
             } else {
                 System.out.println("Login Failed for " + username + "!");
             }
