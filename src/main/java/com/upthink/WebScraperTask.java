@@ -58,8 +58,10 @@ public class WebScraperTask implements Callable<List<List<String>>> {
                 "--disable-translate",
                 "--disable-default-apps",
                 "--disable-popup-blocking",
-                "--disable-blink-features=AutomationControlled"
+                "--disable-blink-features=AutomationControlled",
+                "--window-size=1920,1080"
         );
+
         return new ChromeDriver(options);
     }
 
