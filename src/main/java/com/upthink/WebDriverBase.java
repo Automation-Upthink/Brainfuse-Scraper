@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 public class WebDriverBase {
 
     protected WebDriver driver;
-    protected int defaultTimeout = 20;
+    protected int defaultTimeout = 10;
     protected double defaultPollFrequency = 0.5;
     public static final Logger logger = LoggerFactory.getLogger(WebDriverBase.class);
 

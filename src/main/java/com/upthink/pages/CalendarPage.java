@@ -122,6 +122,7 @@ public class CalendarPage extends WebDriverBase{
      * @return
      */
     private ArrayList<CalendarObject> extractSingleCalendarPage(WebElement tutoringContent) throws ParseException {
+        waitForNewPageToLoad(tutoringContent);
         // Find the calendar element
         WebElement calendarElement = waitForPresenceOfChildElement(tutoringContent, By.id("calendar"));
         String timezone = timezoneSelect(calendarElement);
