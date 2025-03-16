@@ -158,8 +158,8 @@ public class Bootstrap {
 //        previousBfSchedulesheet
 //                .getRange(2, 1, bfScheduleValues.size(), bfScheduleValues.get(0).size()).setValues(bfScheduleValues);
 //
-//        bfSchedulesheet
-//                .getRange(2, 1, bfSchedulesheet.getLastRow(), bfSchedulesheet.getLastColumn()).clear();
+        bfSchedulesheet
+                .getRange(2, 1, bfSchedulesheet.getLastRow(), bfSchedulesheet.getLastColumn()).clear();
 
         Spreadsheet accountDetailsSpreadsheet = Spreadsheet.openById(ACCOUNT_DETAILS_SPREADSHEET_ID);
         // Do things...
