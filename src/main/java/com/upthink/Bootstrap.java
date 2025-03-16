@@ -44,7 +44,7 @@ public class Bootstrap {
         // Web scrape the bf accounts
         scrapeBrainfuse(bfSchedulesheet, previousBfSchedulesheet, 4);
         // Compare today's and yesterday's schedules
-//        compareAndEmail(bfSchedulesheet, previousBfSchedulesheet);
+        compareAndEmail(bfSchedulesheet, previousBfSchedulesheet);
     }
 
 
