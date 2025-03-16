@@ -44,7 +44,7 @@ public class Bootstrap {
         // Web scrape the bf accounts
         scrapeBrainfuse(bfSchedulesheet, previousBfSchedulesheet, 4);
         // Compare today's and yesterday's schedules
-        compareAndEmail(bfSchedulesheet, previousBfSchedulesheet);
+//        compareAndEmail(bfSchedulesheet, previousBfSchedulesheet);
     }
 
 
@@ -150,22 +150,22 @@ public class Bootstrap {
 
 
     private void scrapeBrainfuse(Sheet bfSchedulesheet, Sheet previousBfSchedulesheet, int threads) throws IOException {
-        List<List<Object>> bfScheduleValues = bfSchedulesheet
-                .getRange(2, 1, bfSchedulesheet.getLastRow()-1, bfSchedulesheet.getLastColumn())
-                .getValues();
-        previousBfSchedulesheet
-                .getRange(2, 1, previousBfSchedulesheet.getLastRow(), previousBfSchedulesheet.getLastColumn()).clear();
-        previousBfSchedulesheet
-                .getRange(2, 1, bfScheduleValues.size(), bfScheduleValues.get(0).size()).setValues(bfScheduleValues);
-
-        bfSchedulesheet
-                .getRange(2, 1, bfSchedulesheet.getLastRow(), bfSchedulesheet.getLastColumn()).clear();
+//        List<List<Object>> bfScheduleValues = bfSchedulesheet
+//                .getRange(2, 1, bfSchedulesheet.getLastRow()-1, bfSchedulesheet.getLastColumn())
+//                .getValues();
+//        previousBfSchedulesheet
+//                .getRange(2, 1, previousBfSchedulesheet.getLastRow(), previousBfSchedulesheet.getLastColumn()).clear();
+//        previousBfSchedulesheet
+//                .getRange(2, 1, bfScheduleValues.size(), bfScheduleValues.get(0).size()).setValues(bfScheduleValues);
+//
+//        bfSchedulesheet
+//                .getRange(2, 1, bfSchedulesheet.getLastRow(), bfSchedulesheet.getLastColumn()).clear();
 
         Spreadsheet accountDetailsSpreadsheet = Spreadsheet.openById(ACCOUNT_DETAILS_SPREADSHEET_ID);
         // Do things...
         Sheet passwordSheet = accountDetailsSpreadsheet.getSheetByName("All_Accts&Passwords");
         List<List<Object>> passwordSheetValues = passwordSheet
-                .getRange(1, 1, passwordSheet.getLastRow(), passwordSheet.getLastColumn())
+                .getRange(1, 1, 5, passwordSheet.getLastColumn())
                 .getValues();
 
         ExecutorService executor = Executors.newFixedThreadPool(threads);
