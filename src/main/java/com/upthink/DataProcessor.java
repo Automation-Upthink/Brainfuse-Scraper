@@ -144,14 +144,11 @@ public class DataProcessor {
     public static Map<String, Map<String, Double>> compareSubjectHours(List<List<Object>> currentBFData, List<List<Object>> previousBFData) {
         Map<String, Double> currentBFMap = calculateSubjectHours(currentBFData);
         Map<String, Double> previousBFMap = calculateSubjectHours(previousBFData);
-
         // Initialize the result map
         Map<String, Map<String, Double>> comparisonMap = new HashMap<>();
-
         // Variables to track total hours
         double totalCurrentHours = 0.0;
         double totalPreviousHours = 0.0;
-
         // Combine subjects from both maps
         Set<String> allSubjects = new HashSet<>();
         allSubjects.addAll(currentBFMap.keySet());
@@ -170,6 +167,11 @@ public class DataProcessor {
             // Add the nested map to the comparison map
             comparisonMap.put(subject, hoursMap);
         }
+
+        Map<String, Double> totalMap = new HashMap<>();
+        totalMap.put("previous_hours", totalPreviousHours);
+        totalMap.put("current_hours", totalCurrentHours);
+        comparisonMap.put("Total", totalMap);
         return comparisonMap;
     }
 
