@@ -14,6 +14,10 @@
             padding: 8px;
             text-align: left;
         }
+        /* Highlight style for rows with differences */
+        .highlight {
+            background-color: #ffff99; /* Light yellow */
+        }
     </style>
 </head>
 <body>
@@ -29,7 +33,8 @@
     </tr>
     </thead>
     <tbody>
-    <tr th:each="entry : ${subject_hours_combined}" th:if="${entry.key != 'Total'}">
+    <tr th:each="entry : ${subject_hours_combined}" th:if="${entry.key != 'Total'}"
+        th:class="${entry.value.current_hours != entry.value.previous_hours} ? 'highlight' : ''">
         <td th:text="${entry.key}">Subject</td>
         <td th:text="${entry.value.current_hours}">Today's Hours</td>
         <td th:text="${entry.value.previous_hours}">Yesterday's Hours</td>
