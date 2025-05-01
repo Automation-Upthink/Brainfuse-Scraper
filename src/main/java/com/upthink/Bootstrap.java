@@ -124,8 +124,8 @@ public class Bootstrap {
             System.out.println("Email Message:\n" + emailMessage);
             GMailService emailService = new GMailService();
             String fromEmail = "automation@upthink.com";
-            String toEmail = "sreenjay.sen@upthink.com";
-            List<String> ccEmails = Arrays.asList("sreenjay.sen@upthink.com", "automation@upthink.com");
+            String toEmail = "tushar.jangale@upthink.com";
+            List<String> ccEmails = Arrays.asList("sreenjay.sen@upthink.com", "tejas.jagtap@upthink.com");
             String subject = "BF Shift changes";
             String bodyText = emailMessage;
 
@@ -135,8 +135,8 @@ public class Bootstrap {
             templateVariables.put("subject_hours_combined", comparedSubjectHours);
 
             emailService.sendEmails("automation@upthink.com",
-                    "sreenjay.sen@upthink.com",
-                    Arrays.asList("sreenjay.sen@upthink.com"),
+                    "apurva.yadav@upthink.com",
+                    Arrays.asList("sreenjay.sen@upthink.com", "tejas.jagtap@upthink.com"),
                     "Monthly Hours Projections",
                     "Projected_Numbers.html",
                     templateVariables);
