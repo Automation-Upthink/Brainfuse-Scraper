@@ -124,7 +124,7 @@ public class Bootstrap {
             System.out.println("Email Message:\n" + emailMessage);
             GMailService emailService = new GMailService();
             String fromEmail = "automation@upthink.com";
-            String toEmail = "sreenjay.sen@upthink.com" //"tushar.jangale@upthink.com";
+            String toEmail = "sreenjay.sen@upthink.com"; //"tushar.jangale@upthink.com";
             List<String> ccEmails = Arrays.asList("sreenjay.sen@upthink.com");  //, "tejas.jagtap@upthink.com"
             String subject = "BF Shift changes";
             String bodyText = emailMessage;
