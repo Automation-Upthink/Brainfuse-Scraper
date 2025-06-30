@@ -32,19 +32,27 @@ public class Bootstrap {
     private final LocalDate yesterday = LocalDate.now().minusDays(1);
 
     public Bootstrap() throws GeneralSecurityException, IOException {
-        getSpreadsheetService();
-        getGmailService();
-        Spreadsheet scaperSpreadsheet = Spreadsheet.openById(BF_SCHEDULE_UPDATES_ID);
-
-        Sheet bfSchedulesheet = scaperSpreadsheet.getSheetByName("BF Schedule");
-
-
-        Sheet previousBfSchedulesheet = scaperSpreadsheet.getSheetByName("Previous BF Schedule");
-
-        // Web scrape the bf accounts
-        scrapeBrainfuse(bfSchedulesheet, previousBfSchedulesheet, 4);
-        // Compare today's and yesterday's schedules
-        compareAndEmail(bfSchedulesheet, previousBfSchedulesheet);
+        try{
+            getSpreadsheetService();
+            getGmailService();
+            try {
+                Spreadsheet scaperSpreadsheet = Spreadsheet.openById(BF_SCHEDULE_UPDATES_ID);
+    
+                Sheet bfSchedulesheet = scaperSpreadsheet.getSheetByName("BF Schedule");
+    
+                Sheet previousBfSchedulesheet = scaperSpreadsheet.getSheetByName("Previous BF Schedule");
+            } catch (Exception e) {
+                GMailService emailService = new GMailService();
+                emailService.sendEmails("automation@upthink.com", "automation@upthink.com", Arrays.asList("sreenjay.sen@upthink.com"), "Error in Scraper", e);
+            }
+    
+            // Web scrape the bf accounts
+            scrapeBrainfuse(bfSchedulesheet, previousBfSchedulesheet, 4);
+            // Compare today's and yesterday's schedules
+            compareAndEmail(bfSchedulesheet, previousBfSchedulesheet);
+        } catch (Exception e) {
+            throw new Exception("Some problem with Scraper");
+        }
     }
 
 
