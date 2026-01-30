@@ -2,7 +2,7 @@ name: Gradle CI/CD
 
 on:
   schedule:
-    - cron: '0 2 * * *'  # Runs at 2:00 AM UTC daily (adjust as needed)
+    - cron: '0 1 * * *'  # Runs at 2:00 AM UTC daily (adjust as needed)
   workflow_dispatch:      # Allows manual triggering
 
 jobs:
