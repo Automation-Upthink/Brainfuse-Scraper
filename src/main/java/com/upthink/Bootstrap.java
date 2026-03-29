@@ -35,16 +35,16 @@ public class Bootstrap {
         try{
             getSpreadsheetService();
             getGmailService();
-            try {
+            // try {
                 Spreadsheet scaperSpreadsheet = Spreadsheet.openById(BF_SCHEDULE_UPDATES_ID);
     
                 Sheet bfSchedulesheet = scaperSpreadsheet.getSheetByName("BF Schedule");
     
                 Sheet previousBfSchedulesheet = scaperSpreadsheet.getSheetByName("Previous BF Schedule");
-            } catch (Exception e) {
-                GMailService emailService = new GMailService();
-                emailService.sendEmails("automation@upthink.com", "automation@upthink.com", Arrays.asList("sreenjay.sen@upthink.com"), "Error in Scraper", e);
-            }
+            // } catch (Exception e) {
+                // GMailService emailService = new GMailService();
+                // emailService.sendEmails("automation@upthink.com", "automation@upthink.com", Arrays.asList("sreenjay.sen@upthink.com"), "Error in Scraper", e);
+            // }
     
             // // Web scrape the bf accounts
             // scrapeBrainfuse(bfSchedulesheet, previousBfSchedulesheet, 4);
