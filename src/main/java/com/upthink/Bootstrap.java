@@ -33,21 +33,21 @@ public class Bootstrap {
 
     public Bootstrap() throws GeneralSecurityException, IOException {
         // try{
-            getSpreadsheetService();
-            getGmailService();
-            // try {
-                Spreadsheet scaperSpreadsheet = Spreadsheet.openById(BF_SCHEDULE_UPDATES_ID);
+            // getSpreadsheetService();
+            // getGmailService();
+            // // try {
+            //     Spreadsheet scaperSpreadsheet = Spreadsheet.openById(BF_SCHEDULE_UPDATES_ID);
     
-                Sheet bfSchedulesheet = scaperSpreadsheet.getSheetByName("BF Schedule");
+            //     Sheet bfSchedulesheet = scaperSpreadsheet.getSheetByName("BF Schedule");
     
-                Sheet previousBfSchedulesheet = scaperSpreadsheet.getSheetByName("Previous BF Schedule");
-            // } catch (Exception e) {
-            //     GMailService emailService = new GMailService();
-            //     emailService.sendEmails("automation@upthink.com", "automation@upthink.com", Arrays.asList("sreenjay.sen@upthink.com"), "Error in Scraper", e);
-            // }
+            //     Sheet previousBfSchedulesheet = scaperSpreadsheet.getSheetByName("Previous BF Schedule");
+            // // } catch (Exception e) {
+            // //     GMailService emailService = new GMailService();
+            // //     emailService.sendEmails("automation@upthink.com", "automation@upthink.com", Arrays.asList("sreenjay.sen@upthink.com"), "Error in Scraper", e);
+            // // }
     
-            // Web scrape the bf accounts
-            scrapeBrainfuse(bfSchedulesheet, previousBfSchedulesheet, 4);
+            // // Web scrape the bf accounts
+            // scrapeBrainfuse(bfSchedulesheet, previousBfSchedulesheet, 4);
             // Compare today's and yesterday's schedules
             compareAndEmail(bfSchedulesheet, previousBfSchedulesheet);
         // } catch (Exception e) {
