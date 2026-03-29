@@ -32,7 +32,7 @@ public class Bootstrap {
     private final LocalDate yesterday = LocalDate.now().minusDays(1);
 
     public Bootstrap() throws GeneralSecurityException, IOException {
-        try{
+        // try{
             getSpreadsheetService();
             getGmailService();
             // try {
@@ -41,21 +41,21 @@ public class Bootstrap {
                 Sheet bfSchedulesheet = scaperSpreadsheet.getSheetByName("BF Schedule");
     
                 Sheet previousBfSchedulesheet = scaperSpreadsheet.getSheetByName("Previous BF Schedule");
-            } catch (Exception e) {
-                GMailService emailService = new GMailService();
-                emailService.sendEmails("automation@upthink.com", 
-                                        "automation@upthink.com", 
-                                        Arrays.asList("sreenjay.sen@upthink.com"), 
-                                        "Error in Scraper", e.getMessage() != null ? e.getMessage() : e.toString());
-            }
+            // } catch (Exception e) {
+            //     GMailService emailService = new GMailService();
+            //     emailService.sendEmails("automation@upthink.com", 
+            //                             "automation@upthink.com", 
+            //                             Arrays.asList("sreenjay.sen@upthink.com"), 
+            //                             "Error in Scraper", e.getMessage() != null ? e.getMessage() : e.toString());
+            // }
     
             // // Web scrape the bf accounts
             // scrapeBrainfuse(bfSchedulesheet, previousBfSchedulesheet, 4);
             // // Compare today's and yesterday's schedules
             compareAndEmail(bfSchedulesheet, previousBfSchedulesheet);
-        } catch (Exception e) {
-            throw new RuntimeException("Some problem with Scraper", e);
-        }
+        // } catch (Exception e) {
+        //     throw new RuntimeException("Some problem with Scraper", e);
+        // }
     }
 
 
