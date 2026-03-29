@@ -46,9 +46,9 @@ public class Bootstrap {
                 emailService.sendEmails("automation@upthink.com", "automation@upthink.com", Arrays.asList("sreenjay.sen@upthink.com"), "Error in Scraper", e);
             }
     
-            // Web scrape the bf accounts
-            scrapeBrainfuse(bfSchedulesheet, previousBfSchedulesheet, 4);
-            Compare today's and yesterday's schedules
+            // // Web scrape the bf accounts
+            // scrapeBrainfuse(bfSchedulesheet, previousBfSchedulesheet, 4);
+            // // Compare today's and yesterday's schedules
             compareAndEmail(bfSchedulesheet, previousBfSchedulesheet);
         } catch (Exception e) {
             throw new Exception("Some problem with Scraper", e);
