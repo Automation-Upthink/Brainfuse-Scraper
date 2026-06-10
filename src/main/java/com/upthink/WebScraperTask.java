@@ -18,8 +18,11 @@ import com.upthink.pages.HomePage;
 import com.upthink.pages.LoginPage;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class WebScraperTask implements Callable<List<List<String>>> {
+    private static final Logger log = LoggerFactory.getLogger(WebScraperTask.class);
 
     private final String username;
     private final String password;
@@ -130,5 +133,9 @@ public class WebScraperTask implements Callable<List<List<String>>> {
         Calendar endDate = (Calendar) startDate.clone();
         endDate.add(Calendar.DAY_OF_MONTH, 31);
         return endDate;
+    }
+
+    public String getUsername() {
+        return this.username;
     }
 }

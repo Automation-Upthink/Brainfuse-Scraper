@@ -5,8 +5,11 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
 import com.upthink.WebDriverBase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HomePage extends WebDriverBase {
+    private static final Logger log = LoggerFactory.getLogger(HomePage.class);
 
     private By navbarLocator = By.id("divTopNavMenu");
     private By scheduleLocator = By.id("webfx-menu-object-10");
@@ -24,10 +27,10 @@ public class HomePage extends WebDriverBase {
             try {
                 hoverAndClick(mySchedule, calendarLocator, 2, 0.5);
             } catch (Exception e) {
-                logger.error("Calendar element not found or not visible", e);
+                log.error("Calendar element not found or not visible", e);
             }
         } else {
-            logger.error("Failed to navigate to Schedule because the navbar did not load properly.");
+            log.error("Failed to navigate to Schedule because the navbar did not load properly.");
         }
     }
 
@@ -36,7 +39,7 @@ public class HomePage extends WebDriverBase {
             WebElement navbar = waitForPresenceOfElement(navbarLocator, null, null);
             return navbar.isDisplayed();
         } catch (Exception e) {
-            logger.error("Navbar did not load properly", e);
+            log.error("Navbar did not load properly", e);
             return false;
         }
     }

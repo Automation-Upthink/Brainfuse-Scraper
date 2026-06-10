@@ -8,8 +8,11 @@ import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import com.upthink.WebDriverBase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LoginPage extends WebDriverBase {
+    private static Logger log = LoggerFactory.getLogger(LoginPage.class);
 
     private final By usernameField = By.id("login_username");
     private final By passwordField = By.id("login_password");
@@ -34,9 +37,11 @@ public class LoginPage extends WebDriverBase {
     }
 
     private void clickLoginButton() {
+        log.info("Waiting for login button to be clickable");
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         WebElement button = wait.until(ExpectedConditions.elementToBeClickable(loginButton));
         button.click();
+        log.info("Clicked login button");
     }
 
     public boolean login(String username, String password) {
@@ -57,17 +62,22 @@ public class LoginPage extends WebDriverBase {
                 ));
 
                 if (isLoginSuccessful()) {
+                    log.info("Login attempt {} for {} - landed on URL {}", attempts+1, username, driver.getCurrentUrl());
                     return true;
                 } else {
-                    System.out.println("Login attempt " + (attempts + 1) + " failed. Retrying...");
+                    log.info("Login attempt {} failed. Retrying...", (attempts + 1));
                 }
             } catch (StaleElementReferenceException e) {
-                System.out.println("Login attempt " + (attempts + 1) + " encountered a stale element. Retrying...");
+                log.warn("Login attempt {} encountered a stale element. Retrying...", (attempts + 1));
             } catch (Exception e) {
-                System.out.println("Login attempt " + (attempts + 1) + " encountered an exception: " + e.getMessage());
+                log.warn("Login attempt {} encountered an exception: {}", (attempts + 1), e.getMessage());
             }
             attempts++;
+            try { Thread.sleep(2000); }
+            catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
         }
+        logger.error("All {} login attempts exhausted for {}. Final URL: {}",
+                maxAttempts, username, driver.getCurrentUrl());
         return false;
     }
 

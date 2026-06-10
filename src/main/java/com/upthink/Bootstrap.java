@@ -1,11 +1,10 @@
 package com.upthink;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.security.GeneralSecurityException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
@@ -32,30 +31,42 @@ public class Bootstrap {
     private final LocalDate yesterday = LocalDate.now().minusDays(1);
 
     public Bootstrap() throws GeneralSecurityException, IOException {
-        // try{
             getSpreadsheetService();
             getGmailService();
-            // try {
-                Spreadsheet scaperSpreadsheet = Spreadsheet.openById(BF_SCHEDULE_UPDATES_ID);
-    
-                Sheet bfSchedulesheet = scaperSpreadsheet.getSheetByName("BF Schedule");
-    
-                Sheet previousBfSchedulesheet = scaperSpreadsheet.getSheetByName("Previous BF Schedule");
-            // } catch (Exception e) {
-            //     GMailService emailService = new GMailService();
-            //     emailService.sendEmails("automation@upthink.com", 
-            //                             "automation@upthink.com", 
-            //                             Arrays.asList("sreenjay.sen@upthink.com"), 
-            //                             "Error in Scraper", e.getMessage() != null ? e.getMessage() : e.toString());
-            // }
-    
-            // // Web scrape the bf accounts
-            scrapeBrainfuse(bfSchedulesheet, previousBfSchedulesheet, 4);
-            // // Compare today's and yesterday's schedules
-            compareAndEmail(bfSchedulesheet, previousBfSchedulesheet);
-        // } catch (Exception e) {
-        //     throw new RuntimeException("Some problem with Scraper", e);
-        // }
+             try {
+                 Spreadsheet scaperSpreadsheet = Spreadsheet.openById(BF_SCHEDULE_UPDATES_ID);
+                 Sheet bfSchedulesheet = scaperSpreadsheet.getSheetByName("BF Schedule");
+                 Sheet previousBfSchedulesheet = scaperSpreadsheet.getSheetByName("Previous BF Schedule");
+                 // Web scrape the bf accounts
+                 scrapeBrainfuse(bfSchedulesheet, previousBfSchedulesheet, 4);
+                 // Compare today's and yesterday's schedules
+                 compareAndEmail(bfSchedulesheet, previousBfSchedulesheet);
+             } catch (Exception e) {
+                sendErrorEmail(e);
+                throw new RuntimeException("Scraper failed", e);
+             }
+    }
+
+
+    private void sendErrorEmail(Exception exception) {
+        StringWriter stringWriter = new StringWriter();
+        exception.printStackTrace(new PrintWriter(stringWriter));
+        sendErrorEmail(stringWriter.toString());
+    }
+
+    private void sendErrorEmail(String message) {
+        try {
+            GMailService emailService = new GMailService();
+            emailService.sendEmails(
+                    "automation@upthink.com",
+                    "sreenjay.sen@upthink.com",
+                    List.of(),
+                    "Error in Scraper",
+                    message
+            );
+        } catch (Exception mailEx) {
+            mailEx.printStackTrace();
+        }
     }
 
 
@@ -173,7 +184,6 @@ public class Bootstrap {
                 .getRange(2, 1, bfSchedulesheet.getLastRow(), bfSchedulesheet.getLastColumn()).clear();
 
         Spreadsheet accountDetailsSpreadsheet = Spreadsheet.openById(ACCOUNT_DETAILS_SPREADSHEET_ID);
-        // Do things...
         Sheet passwordSheet = accountDetailsSpreadsheet.getSheetByName("All_Accts&Passwords");
         List<List<Object>> passwordSheetValues = passwordSheet
                 .getRange(1, 1, passwordSheet.getLastRow(), passwordSheet.getLastColumn())
@@ -194,61 +204,91 @@ public class Bootstrap {
                     return new WebScraperTask(username, password, subject, singleDual, audioCertified);
                 }).collect(Collectors.toList());
 
-
-        // Submit
+        // Submit each task once, keeping the Future so we can map results back to accounts
+        Map<Future<List<List<String>>>, WebScraperTask> futureToTask = new HashMap<>();
         for (WebScraperTask task : tasks) {
-            completionService.submit(task);
+            futureToTask.put(completionService.submit(task), task);
         }
+
+        Set<WebScraperTask> completedTasks = new HashSet<>();
+        List<String> failedAccounts = new ArrayList<>();
 
         // Process the results as they complete
         int startRow = 2; // Start writing from row 2 since row 1 is the header
         for (int i = 0; i < tasks.size(); i++) {
+            Future<List<List<String>>> future;
             try {
-                Future<List<List<String>>> future = completionService.take();
+                future = completionService.poll(5, TimeUnit.MINUTES);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+
+            if (future == null) {
+                continue; // nothing finished in this window — stragglers identified later by elimination
+            }
+
+            WebScraperTask task = futureToTask.get(future);
+            completedTasks.add(task); // it completed (successfully or with an exception)
+
+            try {
                 List<List<String>> res = future.get();
+
+                if (res == null || res.isEmpty()) {
+                    failedAccounts.add(task.getUsername() + " (returned no data)");
+                    continue;
+                }
+
                 List<List<Object>> result = new ArrayList<>();
-                // Convert String rows to Object rows
                 for (List<String> row : res) {
                     result.add(new ArrayList<>(row));
                 }
-                int numRows = result.size(); // Number of rows in the current batch
+                int numRows = result.size();
 
                 synchronized (writeLock) {
-                    // We now pass the row count (numRows) and column count (lastCol)
-                    int lastCol = bfSchedulesheet.getLastColumn();  // e.g. 10 if column J is the last non-empty col
-                    String range = bfSchedulesheet
-                            .getRange(startRow, 1, numRows, lastCol)
-                            .getA1Notation();
-
-                    // Actually write to the sheet (uncomment in real code)
+                    int lastCol = bfSchedulesheet.getLastColumn();
                     bfSchedulesheet
                             .getRange(startRow, 1, numRows, lastCol)
                             .setValues(result);
-
-                    // Move the start row down for the next batch
-                    if (numRows > 0) {
-                        startRow += numRows;
-                    }
+                    startRow += numRows;
                 }
 
-            } catch (InterruptedException | ExecutionException | IOException e) {
-                e.printStackTrace();
+            } catch (ExecutionException e) {
+                failedAccounts.add(task.getUsername() + " (" +
+                        (e.getCause() != null ? e.getCause().getMessage() : e.getMessage()) + ")");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                failedAccounts.add(task.getUsername() + " (interrupted)");
+                break;
+            } catch (IOException e) {
+                failedAccounts.add(task.getUsername() + " (sheet write failed: " + e.getMessage() + ")");
             }
         }
 
         // Shut down the executor
         executor.shutdown();
-
         try {
-            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) { // Wait for 60 seconds
-                executor.shutdownNow(); // Force shutdown if not terminated
+            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
                 if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
                     System.err.println("Executor did not terminate properly!");
                 }
             }
         } catch (InterruptedException e) {
-            executor.shutdownNow(); // Re-interrupt if current thread is interrupted
+            executor.shutdownNow();
             Thread.currentThread().interrupt();
+        }
+
+        // By elimination: any task not in completedTasks never finished
+        for (WebScraperTask task : tasks) {
+            if (!completedTasks.contains(task)) {
+                failedAccounts.add(task.getUsername() + " (never completed / timed out)");
+            }
+        }
+
+        // Email failures if any
+        if (!failedAccounts.isEmpty()) {
+            sendErrorEmail("These accounts failed to scrape:\n" + String.join("\n", failedAccounts));
         }
     }
 

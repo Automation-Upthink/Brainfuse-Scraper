@@ -22,8 +22,11 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import com.upthink.Objects.CalendarObject;
 import com.upthink.Objects.Triple;
 import com.upthink.WebDriverBase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CalendarPage extends WebDriverBase{
+    private final Logger log = LoggerFactory.getLogger(CalendarPage.class);
 
     private int counter = 0;
     private int noScheduleDays = 0;
@@ -53,6 +56,7 @@ public class CalendarPage extends WebDriverBase{
      * @return WebElement if found, null if not found after retries.
      */
     private WebElement retryFindElement(Function<WebElement, WebElement> function, WebElement parent, int maxRetries, int retryDelay) {
+        log.info("Retrying for account {}", accountName);
         for (int i = 0; i < maxRetries; i++) {
             try {
                 WebElement element = function.apply(parent);
@@ -60,7 +64,7 @@ public class CalendarPage extends WebDriverBase{
                     return element;
                 }
             } catch (NoSuchElementException | TimeoutException e) {
-                System.out.println("Attempt " + (i + 1) + " to locate 'tutorsched' failed for account " + accountName);
+                log.info("Attempt {} to locate 'tutorsched' failed for account {}", (i + 1) , accountName);
                 try {
                     Thread.sleep(retryDelay);
                 } catch (InterruptedException ie) {
@@ -76,38 +80,59 @@ public class CalendarPage extends WebDriverBase{
      * This method extracts the whole calendar for a particular account
      */
     public ArrayList<CalendarObject> extractCalendar() throws ParseException {
+        log.info("Extracting calendar...");
         // Wait for the main container to be present
         WebElement mainContainer = waitForPresenceOfElement(By.className("maincontainer"));
-        WebElement mainContent = findElement(mainContainer, By.xpath(".//div[contains(@class, 'main-content') and contains(@class, 'column02')]"));
+        WebElement mainContent = findElement(
+                mainContainer,
+                By.xpath(".//div[contains(@class, 'main-content') and contains(@class, 'column02')]")
+        );
         // Find the main content element
         WebElement tdMainContent = findElement(mainContent, By.id("tdMainContent"));
         // Find the tutoring content element
         WebElement tutoringContent = retryFindElement(
-                parent -> waitForPresenceOfChildElement(parent, By.xpath(".//div[contains(@class, 'tutorsched')]"), 30, 100.0),
+                parent -> waitForPresenceOfChildElement(
+                        parent,
+                        By.xpath(".//div[contains(@class, 'tutorsched')]"
+                        ), 30, 100.0),
                 tdMainContent,5, 1000
         );
 
         // If tutoring content still not found after retries, handle it (throw an exception or return empty)
         if (tutoringContent == null) {
-            System.out.println("Account "+ accountName + " has no tutorsched");
+            log.info("Account {} has no tutorsched", accountName);
             throw new NoSuchElementException("Could not find the 'tutorsched' element after multiple retries.");
         }
 
         ArrayList<CalendarObject> events = new ArrayList<>();
+        int stagnantPages = 0;
         while (processedDates.size() <= 31 && !processedDates.contains(endDate)) {
+            int sizeBeforeExtraction = processedDates.size();
+
             events.addAll(extractSingleCalendarPage(tutoringContent));
+
+            int sizeAfterExtraction = processedDates.size();
+
+            if (sizeBeforeExtraction == sizeAfterExtraction) {
+                // This page added zero new dates — either a re-render or a stall
+                stagnantPages++;
+                log.info("No new dates on page for {} stagnant count: {}", accountName, stagnantPages);
+                if (stagnantPages >= 2) {
+                    log.info("Calendar stuck for {} - stopping", accountName);
+                    break;
+                }
+            }
             if (!clickNextButton(tutoringContent)) {
                 break;
             }
-//            waitForNewFcEventContainerToLoad();
         }
 
         return new ArrayList<>(events.subList(0, Math.min(events.size(), 31)));
-//        return events;
     }
 
 
     private void waitForNewPageToLoad(WebElement tutoringContent) {
+        log.info("Waiting for page to load");
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         // Wait for any loading progress to disappear (adjust this based on your page's behavior)
         wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("dlgProgress0")));
@@ -127,7 +152,7 @@ public class CalendarPage extends WebDriverBase{
         WebElement calendarElement = waitForPresenceOfChildElement(tutoringContent, By.id("calendar"));
         String timezone = timezoneSelect(calendarElement);
         ArrayList<CalendarObject> array = calendarSchedules(calendarElement, timezone);
-        System.out.println("Array size" + array.size() + " account " + accountName);
+        log.info("Array size {} for account {}", array.size(), accountName);
         return array;
     }
 
@@ -142,7 +167,7 @@ public class CalendarPage extends WebDriverBase{
                 elementVisible = true;
                 break;
             } catch (Exception e) {
-                System.out.println("Attempt " + (attempt + 1) + " to locate 'fc-event-container' failed. " + accountName);
+                log.info("Attempt {} to locate 'fc-event-container' failed for {}. ", (attempt + 1), accountName);
             }
         }
         if (!elementVisible) {
@@ -249,22 +274,13 @@ public class CalendarPage extends WebDriverBase{
                             array.add(oneEvent);
                         }
                     } catch(Exception e) {
-                        System.out.println("Do nothing for " + dayDateObject + " due to exception: " + e.getMessage());
+                        log.info("Do nothing for {} due to exception: {}", dayDateObject, e.getMessage());
                     }
                 }
                 else {
                     CalendarObject noEventObject = new CalendarObject(dayDateObject, "-", timezone);
                     array.add(noEventObject);
                 }
-//                if (!processedDates.contains(dayDateObject)) {
-//                    processedDates.add(dayDateObject);
-//
-//                    // If there are no events, add a placeholder
-//                    if (!event.getBool()) {
-//                        CalendarObject noEventObject = new CalendarObject(dayDateObject, "-", timezone);
-//                        array.add(noEventObject);
-//                    }
-//                }
             }
         }
         return array;
@@ -277,14 +293,20 @@ public class CalendarPage extends WebDriverBase{
 
         for (int attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
             try {
+                // Hold a reference to a current calendar element BEFORE clicking
+                WebElement calendarBeforeClick = tutoringContent.findElement(By.id("calendar"));
+
                 WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(2));
                 wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("dlgProgress0")));
                 ((JavascriptExecutor) driver).executeScript("arguments[0].click();", rightArrow);
 
-                System.out.println("Right arrow clicked");
+                // Wait for the element to go stale
+                new WebDriverWait(driver, Duration.ofSeconds(10))
+                        .until(ExpectedConditions.stalenessOf(calendarBeforeClick));
+                log.info("Calendar re-rendered for: {}", accountName);
                 return true;
             } catch (ElementClickInterceptedException | TimeoutException e) {
-                System.out.println("Attempt " + (attempt + 1) + " failed: " + e.getMessage());
+                log.info("Attempt {} failed for: {}", (attempt+1), accountName);
                 if (attempt == RETRY_ATTEMPTS - 1) {
                     return false;
                 }
