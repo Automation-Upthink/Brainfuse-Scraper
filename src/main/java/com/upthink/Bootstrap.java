@@ -24,8 +24,8 @@ import javax.mail.MessagingException;
 
 public class Bootstrap {
 
-    private static final String ACCOUNT_DETAILS_SPREADSHEET_ID = "1CrLeLpYVem2ZabdK4wPy1zGQlVsqTF2v4xzEDbPTGgo"; // "11g3ManGTll90QFjT0oy1rXOVYyBLqh_R020fh13Ihak";
-    private static final String BF_SCHEDULE_UPDATES_ID =  "1lt5ureEp8LzvaiXV015RSNLjjW0w3Tt5kaEbV3qQ8ao";
+    private static final String ACCOUNT_DETAILS_SPREADSHEET_ID = "11g3ManGTll90QFjT0oy1rXOVYyBLqh_R020fh13Ihak";
+    private static final String BF_SCHEDULE_UPDATES_ID =  "1CrLeLpYVem2ZabdK4wPy1zGQlVsqTF2v4xzEDbPTGgo"; // "1lt5ureEp8LzvaiXV015RSNLjjW0w3Tt5kaEbV3qQ8ao";
     private static final String ENV_GMAIL_CLIENT_SECRET_JSON = "OAUTH2_CREDENTIALS_FILE";
     private static final Object writeLock = new Object();
     private final LocalDate yesterday = LocalDate.now().minusDays(1);
